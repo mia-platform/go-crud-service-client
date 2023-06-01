@@ -21,15 +21,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/mia-platform/go-crud-service-client/internal/types"
 )
 
-type Filter struct {
-	MongoQuery map[string]any
-	Limit      int
-	Projection []string
-}
-
-func addCrudQuery(req *http.Request, filter Filter) error {
+func addCrudQuery(req *http.Request, filter types.Filter) error {
 	query := url.Values{}
 	if filter.MongoQuery != nil {
 		queryBytes, err := json.Marshal(filter.MongoQuery)

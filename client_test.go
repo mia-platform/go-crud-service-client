@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mia-platform/go-crud-service-client/testhelpers"
+
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/require"
 )
@@ -106,7 +108,7 @@ func TestExport(t *testing.T) {
 
 		gock.New("http://crud-service/resource-path/").
 			Get("export").
-			AddMatcher(crudQueryMatcher(t, filter)).
+			AddMatcher(testhelpers.CrudQueryMatcher(t, testhelpers.Filter(filter))).
 			Reply(200).
 			BodyString(responseBody)
 
@@ -138,7 +140,7 @@ func TestExport(t *testing.T) {
 
 		gock.New("http://crud-service/resource-path/").
 			Get("export").
-			AddMatcher(crudQueryMatcher(t, filter)).
+			AddMatcher(testhelpers.CrudQueryMatcher(t, testhelpers.Filter(filter))).
 			Reply(200).
 			BodyString(responseBody)
 

@@ -23,6 +23,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/mia-platform/go-crud-service-client/internal/types"
+
 	"github.com/davidebianchi/go-jsonclient"
 )
 
@@ -33,6 +35,8 @@ type Client[Resource any] struct {
 type ClientOptions struct {
 	BaseURL string
 }
+
+type Filter types.Filter
 
 func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	client, err := jsonclient.New(jsonclient.Options{
@@ -52,7 +56,7 @@ func (c Client[Resource]) Export(ctx context.Context, path string, filter Filter
 		return nil, fmt.Errorf("%w: %s", ErrCreateRequest, err)
 	}
 
-	if err = addCrudQuery(req, filter); err != nil {
+	if err = addCrudQuery(req, types.Filter(filter)); err != nil {
 		return nil, err
 	}
 
