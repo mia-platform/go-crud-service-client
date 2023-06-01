@@ -26,7 +26,7 @@ import (
 
 func TestNewClient(t *testing.T) {
 	t.Run("create new client", func(t *testing.T) {
-		client, err := New[TestResource](ClientOptions{
+		client, err := NewClient[TestResource](ClientOptions{
 			BaseURL: "http://crud-service/resource-path/",
 		})
 		require.NoError(t, err)
@@ -34,7 +34,7 @@ func TestNewClient(t *testing.T) {
 	})
 
 	t.Run("throws creating a new client", func(t *testing.T) {
-		_, err := New[TestResource](ClientOptions{
+		_, err := NewClient[TestResource](ClientOptions{
 			BaseURL: "http://crud-service/resource-path",
 		})
 		require.EqualError(t, err, fmt.Sprintf("%s: BaseURL must end with a trailing slash", ErrCreateClient))
@@ -50,7 +50,7 @@ type TestResource struct {
 func TestExport(t *testing.T) {
 	ctx := context.Background()
 
-	client, err := New[TestResource](ClientOptions{
+	client, err := NewClient[TestResource](ClientOptions{
 		BaseURL: "http://crud-service/resource-path/",
 	})
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestExport(t *testing.T) {
 
 		gock.New("http://crud-service/resource-path/").
 			Get("export").
-			AddMatcher(CrudQueryMatcher(t, filter)).
+			AddMatcher(crudQueryMatcher(t, filter)).
 			Reply(200).
 			BodyString(responseBody)
 
@@ -138,7 +138,7 @@ func TestExport(t *testing.T) {
 
 		gock.New("http://crud-service/resource-path/").
 			Get("export").
-			AddMatcher(CrudQueryMatcher(t, filter)).
+			AddMatcher(crudQueryMatcher(t, filter)).
 			Reply(200).
 			BodyString(responseBody)
 

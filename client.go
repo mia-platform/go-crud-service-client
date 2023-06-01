@@ -22,14 +22,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 
 	"github.com/davidebianchi/go-jsonclient"
 )
 
-type CrudClient[Resource any] struct {
+type Client[Resource any] struct {
 	client *jsonclient.Client
 }
 
@@ -37,31 +34,25 @@ type ClientOptions struct {
 	BaseURL string
 }
 
-type Filter struct {
-	MongoQuery map[string]any
-	Limit      int
-	Projection []string
-}
-
-func New[Resource any](options ClientOptions) (CrudClient[Resource], error) {
+func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	client, err := jsonclient.New(jsonclient.Options{
 		BaseURL: options.BaseURL,
 	})
 	if err != nil {
-		return CrudClient[Resource]{}, fmt.Errorf("%w: %s", ErrCreateClient, err)
+		return Client[Resource]{}, fmt.Errorf("%w: %s", ErrCreateClient, err)
 	}
-	return CrudClient[Resource]{
+	return Client[Resource]{
 		client: client,
 	}, err
 }
 
-func (c CrudClient[Resource]) Export(ctx context.Context, path string, filter Filter) ([]Resource, error) {
+func (c Client[Resource]) Export(ctx context.Context, path string, filter Filter) ([]Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "export", nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrCreateRequest, err)
 	}
 
-	if err = addCrudQuery(req, filter); err != nil {
+	if err = AddCrudQuery(req, filter); err != nil {
 		return nil, err
 	}
 
@@ -86,27 +77,4 @@ func (c CrudClient[Resource]) Export(ctx context.Context, path string, filter Fi
 	}
 
 	return resources, nil
-}
-
-func addCrudQuery(req *http.Request, filter Filter) error {
-	query := url.Values{}
-	if filter.MongoQuery != nil {
-		queryBytes, err := json.Marshal(filter.MongoQuery)
-		if err != nil {
-			return err
-		}
-		query.Set("_q", string(queryBytes))
-	}
-
-	if filter.Limit != 0 {
-		query.Set("_l", strconv.Itoa(filter.Limit))
-	}
-
-	if filter.Projection != nil {
-		query.Set("_p", strings.Join(filter.Projection, ","))
-	}
-
-	req.URL.RawQuery = query.Encode()
-
-	return nil
 }
