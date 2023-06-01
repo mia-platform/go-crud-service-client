@@ -20,7 +20,7 @@ If you need some other method, please add it with a PR.
 To use it, install with
 
 ```sh
-go get github.com/mia-platform/crud-service-client
+go get github.com/mia-platform/go-crud-service-client
 ```
 
 ## Development

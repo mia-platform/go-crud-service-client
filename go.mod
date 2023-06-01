@@ -1,4 +1,4 @@
-module github.com/mia-platform/crud-service-client
+module github.com/mia-platform/go-crud-service-client
 
 go 1.20
 
