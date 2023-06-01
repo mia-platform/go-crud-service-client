@@ -1,0 +1,49 @@
+name: Test and build
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - "main"
+jobs:
+  tests:
+    name: Test on go ${{ matrix.go_version }} os ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go_version: [1.20]
+        os: [ubuntu-latest]
+        include:
+        - go_version: 1.20
+          os: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use golang ${{ matrix.go_version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go_version }}
+
+      - name: Go version
+        run: go version
+      - name: Go get dependencies
+        run: go get -v -t -d ./...
+      - name: Run tests
+        run: make coverage
+      - name: Build
+        run: go build -v .
+      - name: Send the coverage output
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: cover.out
+          flag-name: go-${{matrix.go}}-os-${{ matrix.os }}
+          parallel: true
+  finish:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true
