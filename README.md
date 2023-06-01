@@ -1,3 +1,6 @@
+[![Test and build](https://github.com/mia-platform/go-crud-service-client/actions/workflows/test-builds.yml/badge.svg)](https://github.com/mia-platform/go-crud-service-client/actions/workflows/test-builds.yml)
+[![Coverage Status](https://coveralls.io/repos/github/mia-platform/go-crud-service-client/badge.svg?branch=main)](https://coveralls.io/github/mia-platform/go-crud-service-client?branch=main)
+
 # Golang CRUD service client
 
 ## Introduction
