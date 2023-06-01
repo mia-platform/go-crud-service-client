@@ -29,7 +29,7 @@ type Filter struct {
 	Projection []string
 }
 
-func AddCrudQuery(req *http.Request, filter Filter) error {
+func addCrudQuery(req *http.Request, filter Filter) error {
 	query := url.Values{}
 	if filter.MongoQuery != nil {
 		queryBytes, err := json.Marshal(filter.MongoQuery)

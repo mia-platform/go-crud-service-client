@@ -52,7 +52,7 @@ func (c Client[Resource]) Export(ctx context.Context, path string, filter Filter
 		return nil, fmt.Errorf("%w: %s", ErrCreateRequest, err)
 	}
 
-	if err = AddCrudQuery(req, filter); err != nil {
+	if err = addCrudQuery(req, filter); err != nil {
 		return nil, err
 	}
 
