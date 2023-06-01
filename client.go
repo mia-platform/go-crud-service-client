@@ -23,8 +23,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/davidebianchi/go-jsonclient"
 	"github.com/mia-platform/go-crud-service-client/internal/types"
+
+	"github.com/davidebianchi/go-jsonclient"
 )
 
 type Client[Resource any] struct {
