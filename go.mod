@@ -3,7 +3,7 @@ module github.com/mia-platform/go-crud-service-client
 go 1.20
 
 require (
-	github.com/davidebianchi/go-jsonclient v1.4.0
+	github.com/davidebianchi/go-jsonclient v1.5.0
 	github.com/h2non/gock v1.2.0
 	github.com/stretchr/testify v1.8.4
 )
