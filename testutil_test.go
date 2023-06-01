@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
+func crudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 	return func(r1 *http.Request, r2 *gock.Request) (bool, error) {
 		t.Helper()
 
