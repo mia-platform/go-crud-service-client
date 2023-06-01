@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crud
+package testhelpers
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func crudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
+func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 	return func(r1 *http.Request, r2 *gock.Request) (bool, error) {
 		t.Helper()
 
