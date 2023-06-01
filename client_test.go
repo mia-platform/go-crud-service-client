@@ -68,7 +68,7 @@ func TestExport(t *testing.T) {
 			Reply(200).
 			BodyString(responseBody)
 
-		resources, err := client.Export(ctx, "", Filter{})
+		resources, err := client.Export(ctx, Filter{})
 		require.NoError(t, err)
 		require.Equal(t, []TestResource{
 			{
@@ -111,7 +111,7 @@ func TestExport(t *testing.T) {
 			Reply(200).
 			BodyString(responseBody)
 
-		resources, err := client.Export(ctx, "", filter)
+		resources, err := client.Export(ctx, filter)
 		require.NoError(t, err)
 		require.Equal(t, []TestResource{
 			{
@@ -143,7 +143,7 @@ func TestExport(t *testing.T) {
 			Reply(200).
 			BodyString(responseBody)
 
-		resources, err := client.Export(ctx, "", filter)
+		resources, err := client.Export(ctx, filter)
 		require.NoError(t, err)
 		require.Equal(t, []TestResource{
 			{
@@ -163,7 +163,7 @@ func TestExport(t *testing.T) {
 			Reply(500).
 			BodyString(`{"message":"error message"}`)
 
-		resources, err := client.Export(ctx, "", Filter{})
+		resources, err := client.Export(ctx, Filter{})
 		require.EqualError(t, err, "GET http://crud-service/resource-path/export: 500 - {\"message\":\"error message\"}")
 		require.Nil(t, resources)
 	})

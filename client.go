@@ -50,7 +50,7 @@ func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	}, err
 }
 
-func (c Client[Resource]) Export(ctx context.Context, path string, filter Filter) ([]Resource, error) {
+func (c Client[Resource]) Export(ctx context.Context, filter Filter) ([]Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "export", nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrCreateRequest, err)
