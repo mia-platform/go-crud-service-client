@@ -5,7 +5,7 @@
 
 ## Introduction
 
-In our projects, we often use [crud-service](https://github.com/mia-platform/crud-service)
+In our projects, we often use [CRUD Service](https://github.com/mia-platform/crud-service)
 and we want a way to interact to it with a standard client.
 
 At the moment, it is limited.
