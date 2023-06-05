@@ -25,7 +25,24 @@ import (
 	"github.com/mia-platform/go-crud-service-client/internal/types"
 )
 
-func addCrudQuery(req *http.Request, filter types.Filter) error {
+type Filter types.Filter
+
+type Options struct {
+	Filter  Filter
+	Headers http.Header
+}
+
+func (o Options) setOptionsInRequest(req *http.Request) error {
+	if err := addCrudQueryToRequest(req, types.Filter(o.Filter)); err != nil {
+		return err
+	}
+
+	addHeaderToRequest(req, o.Headers)
+
+	return nil
+}
+
+func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	query := url.Values{}
 	if filter.MongoQuery != nil {
 		queryBytes, err := json.Marshal(filter.MongoQuery)
@@ -46,4 +63,10 @@ func addCrudQuery(req *http.Request, filter types.Filter) error {
 	req.URL.RawQuery = query.Encode()
 
 	return nil
+}
+
+func addHeaderToRequest(req *http.Request, headers http.Header) {
+	for name := range headers {
+		req.Header.Set(name, headers.Get(name))
+	}
 }

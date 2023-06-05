@@ -15,9 +15,71 @@
 
 package crud
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/davidebianchi/go-jsonclient"
+)
 
 var (
 	ErrCreateClient  = fmt.Errorf("fails to create client")
 	ErrCreateRequest = fmt.Errorf("fails to create requests")
+
+	ErrResponse = fmt.Errorf("crud error")
 )
+
+type HTTPError struct {
+	Response     *http.Response
+	StatusCode   int
+	Err          error
+	ResponseBody CrudErrorResponse
+	Raw          []byte
+}
+
+func (e *HTTPError) Error() string {
+	message := e.ResponseBody.Message
+	if message == "" {
+		message = string(e.Raw)
+	}
+	if message == "" {
+		message = "error body from crud-service is empty"
+	}
+
+	return message
+}
+
+func (e *HTTPError) Unwrap() error {
+	return e.Err
+}
+
+type CrudErrorResponse struct {
+	Message    string `json:"message,omitempty"`
+	StatusCode int    `json:"statusCode,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+func responseError(resErr error) error {
+	var httpError *jsonclient.HTTPError
+
+	if !errors.As(resErr, &httpError) {
+		return resErr
+	}
+
+	errorResponse := CrudErrorResponse{}
+	if strings.HasPrefix(httpError.Response.Header.Get("Content-Type"), "application/json") && string(httpError.Raw) != "" {
+		if err := httpError.Unmarshal(&errorResponse); err != nil {
+			return err
+		}
+	}
+
+	return &HTTPError{
+		Response:     httpError.Response,
+		StatusCode:   httpError.StatusCode,
+		Err:          ErrResponse,
+		ResponseBody: errorResponse,
+		Raw:          httpError.Raw,
+	}
+}

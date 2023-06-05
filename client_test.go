@@ -17,28 +17,58 @@ package crud
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 	"testing"
 
-	"github.com/h2non/gock"
 	"github.com/mia-platform/go-crud-service-client/testhelper"
+
+	"github.com/h2non/gock"
 	"github.com/stretchr/testify/require"
 )
+
+var baseURL = "http://crud-service/resource-path/"
 
 func TestNewClient(t *testing.T) {
 	t.Run("create new client", func(t *testing.T) {
 		client, err := NewClient[TestResource](ClientOptions{
-			BaseURL: "http://crud-service/resource-path/",
+			BaseURL: baseURL,
 		})
 		require.NoError(t, err)
 		require.NotNil(t, client)
 	})
 
-	t.Run("throws creating a new client", func(t *testing.T) {
-		_, err := NewClient[TestResource](ClientOptions{
+	t.Run("create a new client correctly without trailing slash", func(t *testing.T) {
+		c, err := NewClient[TestResource](ClientOptions{
 			BaseURL: "http://crud-service/resource-path",
 		})
-		require.EqualError(t, err, fmt.Sprintf("%s: BaseURL must end with a trailing slash", ErrCreateClient))
+		require.NoError(t, err)
+		require.NotNil(t, c)
+		require.Equal(t, baseURL, c.client.BaseURL.String())
+	})
+
+	t.Run("create new client with default headers to add in request", func(t *testing.T) {
+		h := http.Header{}
+		h.Set("Foo", "bar")
+		h.Set("Taz", "ok")
+
+		client, err := NewClient[TestResource](ClientOptions{
+			BaseURL: baseURL,
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		gock.New(baseURL).
+			Get("export").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			BodyString("")
+
+		_, err = client.Export(context.Background(), Options{})
+		require.NoError(t, err)
 	})
 }
 
@@ -50,11 +80,7 @@ type TestResource struct {
 
 func TestExport(t *testing.T) {
 	ctx := context.Background()
-
-	client, err := NewClient[TestResource](ClientOptions{
-		BaseURL: "http://crud-service/resource-path/",
-	})
-	require.NoError(t, err)
+	client := getClient(t)
 
 	t.Run("export data", func(t *testing.T) {
 		responseBody := `
@@ -63,12 +89,12 @@ func TestExport(t *testing.T) {
 		{"field": "v-3","intField":3,"_id":"my-id-3"}
 		`
 
-		gock.New("http://crud-service/resource-path/").
+		gock.New(baseURL).
 			Get("export").
 			Reply(200).
 			BodyString(responseBody)
 
-		resources, err := client.Export(ctx, Filter{})
+		resources, err := client.Export(ctx, Options{})
 		require.NoError(t, err)
 		require.Equal(t, []TestResource{
 			{
@@ -105,13 +131,13 @@ func TestExport(t *testing.T) {
 			Limit: 5,
 		}
 
-		gock.New("http://crud-service/resource-path/").
+		gock.New(baseURL).
 			Get("export").
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			Reply(200).
 			BodyString(responseBody)
 
-		resources, err := client.Export(ctx, filter)
+		resources, err := client.Export(ctx, Options{Filter: filter})
 		require.NoError(t, err)
 		require.Equal(t, []TestResource{
 			{
@@ -137,13 +163,13 @@ func TestExport(t *testing.T) {
 			},
 		}
 
-		gock.New("http://crud-service/resource-path/").
+		gock.New(baseURL).
 			Get("export").
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			Reply(200).
 			BodyString(responseBody)
 
-		resources, err := client.Export(ctx, filter)
+		resources, err := client.Export(ctx, Options{Filter: filter})
 		require.NoError(t, err)
 		require.Equal(t, []TestResource{
 			{
@@ -158,13 +184,143 @@ func TestExport(t *testing.T) {
 	})
 
 	t.Run("throws with errors", func(t *testing.T) {
-		gock.New("http://crud-service/resource-path/").
+		gock.New(baseURL).
 			Get("export").
 			Reply(500).
+			AddHeader("Content-Type", "application/json").
 			BodyString(`{"message":"error message"}`)
 
-		resources, err := client.Export(ctx, Filter{})
-		require.EqualError(t, err, "GET http://crud-service/resource-path/export: 500 - {\"message\":\"error message\"}")
+		resources, err := client.Export(ctx, Options{})
+		require.EqualError(t, err, "error message")
 		require.Nil(t, resources)
 	})
+
+	t.Run("export data and proxy headers in request", func(t *testing.T) {
+		responseBody := `
+		{"field": "v-1","intField":1,"_id":"my-id-1"}
+		{"field": "v-2","intField":2,"_id":"my-id-2"}
+		{"field": "v-3","intField":3,"_id":"my-id-3"}
+		`
+
+		gock.New(baseURL).
+			Get("export").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			BodyString(responseBody)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		resources, err := client.Export(ctx, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, []TestResource{
+			{
+				Field:    "v-1",
+				IntField: 1,
+				ID:       "my-id-1",
+			},
+			{
+				Field:    "v-2",
+				IntField: 2,
+				ID:       "my-id-2",
+			},
+			{
+				Field:    "v-3",
+				IntField: 3,
+				ID:       "my-id-3",
+			},
+		}, resources)
+	})
+}
+
+func TestGetById(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	id := "my-id-1"
+	expectedElement := TestResource{
+		Field:    "v-1",
+		IntField: 1,
+		ID:       id,
+	}
+
+	t.Run("get element by id", func(t *testing.T) {
+		gock.New(baseURL).
+			Get(id).
+			Reply(200).
+			JSON(expectedElement)
+
+		resource, err := client.GetByID(ctx, id, Options{})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resource)
+	})
+
+	t.Run("get element with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+		}
+
+		gock.New(baseURL).
+			Get(id).
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			Reply(200).
+			JSON(expectedElement)
+
+		resource, err := client.GetByID(ctx, id, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resource)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		gock.New(baseURL).
+			Get(id).
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "element not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		resource, err := client.GetByID(ctx, id, Options{})
+		require.EqualError(t, err, "element not found")
+		require.Nil(t, resource)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		gock.New(baseURL).
+			Get(id).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(expectedElement)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		resources, err := client.GetByID(ctx, id, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resources)
+	})
+}
+
+func getClient(t *testing.T) Client[TestResource] {
+	t.Helper()
+
+	client, err := NewClient[TestResource](ClientOptions{
+		BaseURL: baseURL,
+	})
+	require.NoError(t, err)
+
+	return client
 }
