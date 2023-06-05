@@ -96,3 +96,29 @@ func (c Client[Resource]) GetByID(ctx context.Context, id string, options Option
 	}
 	return resource, nil
 }
+
+type PatchBody struct {
+	Set         map[string]any `json:"$set,omitempty"`
+	Unset       map[string]any `json:"$unset,omitempty"`
+	Inc         map[string]int `json:"$inc,omitempty"`
+	Mul         map[string]int `json:"$mul,omitempty"`
+	CurrentDate map[string]any `json:"$currentDate,omitempty"`
+	Push        map[string]any `json:"$push,omitempty"`
+}
+
+func (c Client[Resource]) Patch(ctx context.Context, id string, body PatchBody, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, id, body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resource := new(Resource)
+	if _, err := c.client.Do(req, resource); err != nil {
+		return nil, responseError(err)
+	}
+	return resource, nil
+}
