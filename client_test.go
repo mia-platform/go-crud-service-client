@@ -72,10 +72,15 @@ func TestNewClient(t *testing.T) {
 	})
 }
 
+type NestedResource struct {
+	Field string `json:"field"`
+}
+
 type TestResource struct {
-	Field    string `json:"field"`
-	ID       string `json:"_id"`
-	IntField int    `json:"intField"`
+	Field    string         `json:"field"`
+	ID       string         `json:"_id"`
+	IntField int            `json:"intField"`
+	Nested   NestedResource `json:"nested"`
 }
 
 func TestExport(t *testing.T) {
@@ -307,6 +312,95 @@ func TestGetById(t *testing.T) {
 		h.Set("taz", "ok")
 
 		resources, err := client.GetByID(ctx, id, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resources)
+	})
+}
+
+func TestPatch(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	id := "my-id-1"
+	expectedElement := TestResource{
+		Field:    "v-1",
+		IntField: 1,
+		ID:       id,
+		Nested: NestedResource{
+			Field: "something",
+		},
+	}
+	body := PatchBody{
+		Set: map[string]any{
+			"field":        "v-1",
+			"nested.field": "something",
+		},
+	}
+	expectedBody := `{"$set":{"field":"v-1","nested.field":"something"}}`
+
+	t.Run("patch element", func(t *testing.T) {
+		gock.New(baseURL).
+			Patch(id).
+			BodyString(expectedBody).
+			Reply(200).
+			JSON(expectedElement)
+
+		resource, err := client.PatchById(ctx, id, body, Options{})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resource)
+	})
+
+	t.Run("patch element with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+		}
+
+		gock.New(baseURL).
+			Patch(id).
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			BodyString(expectedBody).
+			Reply(200).
+			JSON(expectedElement)
+
+		resource, err := client.PatchById(ctx, id, body, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resource)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		gock.New(baseURL).
+			Patch(id).
+			BodyString(expectedBody).
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "element not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		resource, err := client.PatchById(ctx, id, body, Options{})
+		require.EqualError(t, err, "element not found")
+		require.Nil(t, resource)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		gock.New(baseURL).
+			Patch(id).
+			BodyString(expectedBody).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(expectedElement)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		resources, err := client.PatchById(ctx, id, body, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
