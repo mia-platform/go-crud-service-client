@@ -137,3 +137,23 @@ func (c Client[Resource]) PatchById(ctx context.Context, id string, body PatchBo
 	}
 	return resource, nil
 }
+
+// List get the resources of the collection with the specified filter. It is limited by default
+// and with a max page of 200 elements (by default).
+// If you want to take more elements, use pagination
+func (c Client[Resource]) List(ctx context.Context, id string, options Options) ([]Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resources := []Resource{}
+	if _, err := c.client.Do(req, &resources); err != nil {
+		return nil, responseError(err)
+	}
+	return resources, nil
+}

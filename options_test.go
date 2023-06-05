@@ -69,8 +69,9 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 						"$in": []string{"v-1", "v-2"},
 					},
 				},
+				Skip: 2,
 			},
-			expectedUnencodedQuery: `_l=5&_p=a,b&_q={"field":{"$in":["v-1","v-2"]}}`,
+			expectedUnencodedQuery: `_l=5&_p=a,b&_q={"field":{"$in":["v-1","v-2"]}}&_sk=2`,
 		},
 		{
 			name: "with only MongoQuery",
@@ -96,6 +97,13 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 				Projection: []string{"a", "b"},
 			},
 			expectedUnencodedQuery: `_p=a,b`,
+		},
+		{
+			name: "with only skip",
+			filter: types.Filter{
+				Skip: 4,
+			},
+			expectedUnencodedQuery: `_sk=4`,
 		},
 	}
 
