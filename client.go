@@ -97,15 +97,30 @@ func (c Client[Resource]) GetByID(ctx context.Context, id string, options Option
 	return resource, nil
 }
 
+// Body to update a document in the collection
 type PatchBody struct {
-	Set         map[string]any `json:"$set,omitempty"`
-	Unset       map[string]any `json:"$unset,omitempty"`
-	Inc         map[string]int `json:"$inc,omitempty"`
-	Mul         map[string]int `json:"$mul,omitempty"`
+	// Set replaces the value of the field with specified value. It is possible also
+	// to use with nested fields: e.g. `"a.b": "update"`
+	Set map[string]any `json:"$set,omitempty"`
+	// Unset a particular document value
+	Unset map[string]bool `json:"$unset,omitempty"`
+	// Inc increment a field by a specified value
+	Inc map[string]int `json:"$inc,omitempty"`
+	// Mul multiply the value of a field by a specified number
+	Mul map[string]int `json:"$mul,omitempty"`
+	// CurrentDate sets the value of a field to the current date. The field MUST
+	// be of type Date
 	CurrentDate map[string]any `json:"$currentDate,omitempty"`
-	Push        map[string]any `json:"$push,omitempty"`
+	// Push appends a value to an array field
+	Push map[string]any `json:"$push,omitempty"`
+	// Pull removes a specified value from an array field
+	Pull map[string]any `json:"$pull,omitempty"`
+	// AddToSet appends a specified value to an array field unless the value is
+	// already present
+	AddToSet map[string]any `json:"$addToSet,omitempty"`
 }
 
+// Patch update an element using commands in PatchBody
 func (c Client[Resource]) Patch(ctx context.Context, id string, body PatchBody, options Options) (*Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, id, body)
 	if err != nil {
