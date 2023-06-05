@@ -12,6 +12,7 @@ and we want a way to interact to it with a standard client.
 At the moment, it is limited.
 The supported methods are:
 
+- GetById: `GET /:id`
 - PatchByID: `PATCH /:id`
 - Export: `GET /export`
 
