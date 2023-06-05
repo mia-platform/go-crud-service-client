@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/go-crud-service-client/internal/types"
+
 	"github.com/stretchr/testify/require"
 )
 

@@ -20,8 +20,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/h2non/gock"
 	"github.com/mia-platform/go-crud-service-client/testhelper"
+
+	"github.com/h2non/gock"
 	"github.com/stretchr/testify/require"
 )
 
