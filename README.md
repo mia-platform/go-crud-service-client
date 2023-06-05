@@ -12,7 +12,9 @@ and we want a way to interact to it with a standard client.
 At the moment, it is limited.
 The supported methods are:
 
-- Export (`/export` endpoint)
+- PatchByID: `PATCH /:id`
+- Export: `GET /export`
+
 
 If you need some other method, please add it with a PR.
 
