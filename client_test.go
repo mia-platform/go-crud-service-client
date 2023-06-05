@@ -17,6 +17,8 @@ package crud
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -346,6 +348,37 @@ func TestPatch(t *testing.T) {
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedElement)
+
+		resource, err := client.PatchById(ctx, id, body, Options{})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resource)
+	})
+
+	t.Run("patch element with addToSet", func(t *testing.T) {
+		gock.New(baseURL).
+			Patch(id).
+			BodyString(`{"$addToSet":{"something":{"$each":["a","b"]}}}`).
+			Reply(200).
+			JSON(expectedElement)
+
+		type patchBodyAddSomething struct {
+			Something any `json:"something"`
+		}
+
+		type eachOperatorBody struct {
+			Each []string `json:"$each"`
+		}
+
+		body := PatchBody{
+			AddToSet: patchBodyAddSomething{
+				Something: eachOperatorBody{
+					Each: []string{"a", "b"},
+				},
+			},
+		}
+
+		v, _ := json.Marshal(body)
+		fmt.Printf("v %+v", string(v))
 
 		resource, err := client.PatchById(ctx, id, body, Options{})
 		require.NoError(t, err)

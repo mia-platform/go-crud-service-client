@@ -101,7 +101,7 @@ func (c Client[Resource]) GetByID(ctx context.Context, id string, options Option
 type PatchBody struct {
 	// Set replaces the value of the field with specified value. It is possible also
 	// to use with nested fields: e.g. `"a.b": "update"`
-	Set map[string]any `json:"$set,omitempty"`
+	Set any `json:"$set,omitempty"`
 	// Unset a particular document value
 	Unset map[string]bool `json:"$unset,omitempty"`
 	// Inc increment a field by a specified value
@@ -110,14 +110,14 @@ type PatchBody struct {
 	Mul map[string]int `json:"$mul,omitempty"`
 	// CurrentDate sets the value of a field to the current date. The field MUST
 	// be of type Date
-	CurrentDate map[string]any `json:"$currentDate,omitempty"`
+	CurrentDate any `json:"$currentDate,omitempty"`
 	// Push appends a value to an array field
-	Push map[string]any `json:"$push,omitempty"`
+	Push any `json:"$push,omitempty"`
 	// Pull removes a specified value from an array field
-	Pull map[string]any `json:"$pull,omitempty"`
+	Pull any `json:"$pull,omitempty"`
 	// AddToSet appends a specified value to an array field unless the value is
 	// already present
-	AddToSet map[string]any `json:"$addToSet,omitempty"`
+	AddToSet any `json:"$addToSet,omitempty"`
 }
 
 // PatchById update an element using commands in PatchBody
