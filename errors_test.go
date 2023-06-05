@@ -1,6 +1,7 @@
 package crud
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -135,6 +136,13 @@ func TestErrors(t *testing.T) {
 			Raw:          httpErr.Raw,
 		}, crudError)
 		require.EqualError(t, err, "error body from crud-service is empty")
+	})
+
+	t.Run("response error is not a jsonclient.HTTPError", func(t *testing.T) {
+		someErr := fmt.Errorf("an error message")
+		err := responseError(someErr)
+
+		require.EqualError(t, err, "an error message")
 	})
 }
 
