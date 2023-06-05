@@ -23,8 +23,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/mia-platform/go-crud-service-client/internal/types"
-
 	"github.com/davidebianchi/go-jsonclient"
 )
 
@@ -32,15 +30,11 @@ type Client[Resource any] struct {
 	client *jsonclient.Client
 }
 
-type ClientOptions struct {
-	BaseURL string
-}
-
-type Filter types.Filter
-
+// NewClient create a new client to interact with crud-service
 func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	client, err := jsonclient.New(jsonclient.Options{
 		BaseURL: options.BaseURL,
+		Headers: options.convertHeaders(),
 	})
 	if err != nil {
 		return Client[Resource]{}, fmt.Errorf("%w: %s", ErrCreateClient, err)
@@ -50,20 +44,22 @@ func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	}, err
 }
 
-func (c Client[Resource]) Export(ctx context.Context, filter Filter) ([]Resource, error) {
+// Export calls /export endpoint of crud-service. It is possible to add filters.
+// Exports does not have max limits.
+func (c Client[Resource]) Export(ctx context.Context, options Options) ([]Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "export", nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrCreateRequest, err)
 	}
 
-	if err = addCrudQuery(req, types.Filter(filter)); err != nil {
+	if err := options.setOptionsInRequest(req); err != nil {
 		return nil, err
 	}
 
 	responseBuf := bytes.NewBuffer(nil)
 	_, err = c.client.Do(req, responseBuf)
 	if err != nil {
-		return nil, err
+		return nil, responseError(err)
 	}
 
 	resources := []Resource{}
@@ -81,4 +77,22 @@ func (c Client[Resource]) Export(ctx context.Context, filter Filter) ([]Resource
 	}
 
 	return resources, nil
+}
+
+// GetById get a resource by _id
+func (c Client[Resource]) GetByID(ctx context.Context, id string, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resource := new(Resource)
+	if _, err := c.client.Do(req, resource); err != nil {
+		return nil, responseError(err)
+	}
+	return resource, nil
 }
