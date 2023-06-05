@@ -15,7 +15,6 @@ The supported methods are:
 - PatchByID: `PATCH /:id`
 - Export: `GET /export`
 
-
 If you need some other method, please add it with a PR.
 
 ## Usage
