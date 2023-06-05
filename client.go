@@ -120,8 +120,8 @@ type PatchBody struct {
 	AddToSet map[string]any `json:"$addToSet,omitempty"`
 }
 
-// Patch update an element using commands in PatchBody
-func (c Client[Resource]) Patch(ctx context.Context, id string, body PatchBody, options Options) (*Resource, error) {
+// PatchById update an element using commands in PatchBody
+func (c Client[Resource]) PatchById(ctx context.Context, id string, body PatchBody, options Options) (*Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, id, body)
 	if err != nil {
 		return nil, err

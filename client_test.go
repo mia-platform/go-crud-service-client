@@ -347,7 +347,7 @@ func TestPatch(t *testing.T) {
 			Reply(200).
 			JSON(expectedElement)
 
-		resource, err := client.Patch(ctx, id, body, Options{})
+		resource, err := client.PatchById(ctx, id, body, Options{})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resource)
 	})
@@ -364,7 +364,7 @@ func TestPatch(t *testing.T) {
 			Reply(200).
 			JSON(expectedElement)
 
-		resource, err := client.Patch(ctx, id, body, Options{Filter: filter})
+		resource, err := client.PatchById(ctx, id, body, Options{Filter: filter})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resource)
 	})
@@ -380,7 +380,7 @@ func TestPatch(t *testing.T) {
 				Error:      "Not Found",
 			})
 
-		resource, err := client.Patch(ctx, id, body, Options{})
+		resource, err := client.PatchById(ctx, id, body, Options{})
 		require.EqualError(t, err, "element not found")
 		require.Nil(t, resource)
 	})
@@ -400,7 +400,7 @@ func TestPatch(t *testing.T) {
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		resources, err := client.Patch(ctx, id, body, Options{
+		resources, err := client.PatchById(ctx, id, body, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
