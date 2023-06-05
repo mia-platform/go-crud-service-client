@@ -6,13 +6,15 @@
 
 ## Introduction
 
-In our projects, we often use [crud-service](https://github.com/mia-platform/crud-service)
+In our projects, we often use [CRUD Service](https://github.com/mia-platform/crud-service)
 and we want a way to interact to it with a standard client.
 
 At the moment, it is limited.
 The supported methods are:
 
-- Export (`/export` endpoint)
+- GetById: `GET /:id`
+- PatchByID: `PATCH /:id`
+- Export: `GET /export`
 
 If you need some other method, please add it with a PR.
 
