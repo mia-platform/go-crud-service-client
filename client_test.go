@@ -17,6 +17,7 @@ package crud
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -501,6 +502,77 @@ func TestList(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, expectedElements, resources)
+	})
+}
+
+func TestCreate(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	expectedID := "my _id"
+
+	resourceToCreate := TestResource{
+		Field:    "v-1",
+		IntField: 1,
+		Nested: NestedResource{
+			Field: "something",
+		},
+	}
+
+	expectedBody, err := json.Marshal(resourceToCreate)
+	require.NoError(t, err)
+
+	t.Run("creates resource", func(t *testing.T) {
+
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+			BodyString(string(expectedBody)).
+			Reply(200).
+			JSON(map[string]string{
+				"_id": expectedID,
+			})
+
+		actualID, err := client.Create(ctx, resourceToCreate, Options{})
+		require.NoError(t, err)
+		require.Equal(t, expectedID, actualID)
+	})
+
+	t.Run("throws - bad request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+			BodyString(string(expectedBody)).
+			Reply(400).
+			JSON(CrudErrorResponse{
+				Message:    "missing required field",
+				StatusCode: 404,
+				Error:      "Bad Request",
+			})
+
+		actualID, err := client.Create(ctx, resourceToCreate, Options{})
+		require.EqualError(t, err, "missing required field")
+		require.Empty(t, actualID)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+			BodyString(string(expectedBody)).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(map[string]string{
+				"_id": expectedID,
+			})
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		actualID, err := client.Create(ctx, resourceToCreate, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedID, actualID)
 	})
 }
 
