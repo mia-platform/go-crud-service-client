@@ -464,7 +464,7 @@ func TestList(t *testing.T) {
 			Reply(200).
 			JSON(expectedElements)
 
-		resource, err := client.List(ctx, id, Options{})
+		resource, err := client.List(ctx, Options{})
 		require.NoError(t, err)
 		require.Equal(t, expectedElements, resource)
 	})
@@ -482,7 +482,7 @@ func TestList(t *testing.T) {
 			Reply(200).
 			JSON(expectedElements)
 
-		resources, err := client.List(ctx, id, Options{Filter: filter})
+		resources, err := client.List(ctx, Options{Filter: filter})
 		require.NoError(t, err)
 		require.Equal(t, expectedElements, resources)
 	})
@@ -497,7 +497,7 @@ func TestList(t *testing.T) {
 				Error:      "Not Found",
 			})
 
-		resource, err := client.List(ctx, id, Options{})
+		resource, err := client.List(ctx, Options{})
 		require.EqualError(t, err, "element not found")
 		require.Nil(t, resource)
 	})
@@ -516,7 +516,7 @@ func TestList(t *testing.T) {
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		resources, err := client.List(ctx, id, Options{
+		resources, err := client.List(ctx, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
