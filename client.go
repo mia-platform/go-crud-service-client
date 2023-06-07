@@ -158,6 +158,7 @@ func (c Client[Resource]) List(ctx context.Context, options Options) ([]Resource
 	return resources, nil
 }
 
+// The type that represents a newly created resource
 type CreatedResource struct {
 	ID string `json:"_id"`
 }
