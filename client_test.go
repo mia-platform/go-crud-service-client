@@ -542,7 +542,7 @@ func TestCreate(t *testing.T) {
 			Reply(400).
 			JSON(CrudErrorResponse{
 				Message:    "missing required field",
-				StatusCode: 404,
+				StatusCode: 400,
 				Error:      "Bad Request",
 			})
 
