@@ -523,7 +523,6 @@ func TestCreate(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("creates resource", func(t *testing.T) {
-
 		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
 			BodyString(string(expectedBody)).
 			Reply(200).
