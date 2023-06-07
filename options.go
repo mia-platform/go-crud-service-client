@@ -60,6 +60,10 @@ func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 		query.Set("_p", strings.Join(filter.Projection, ","))
 	}
 
+	if filter.Skip != 0 {
+		query.Set("_sk", strconv.Itoa(filter.Skip))
+	}
+
 	req.URL.RawQuery = query.Encode()
 
 	return nil

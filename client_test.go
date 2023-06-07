@@ -17,8 +17,6 @@ package crud
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -377,9 +375,6 @@ func TestPatch(t *testing.T) {
 			},
 		}
 
-		v, _ := json.Marshal(body)
-		fmt.Printf("v %+v", string(v))
-
 		resource, err := client.PatchById(ctx, id, body, Options{})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resource)
@@ -438,6 +433,94 @@ func TestPatch(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resources)
+	})
+}
+
+func TestList(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	id := "my-id-1"
+	id2 := "my-id-2"
+	expectedElements := []TestResource{
+		{
+			Field:    "v-1",
+			IntField: 1,
+			ID:       id,
+			Nested: NestedResource{
+				Field: "something",
+			},
+		},
+		{
+			Field:    "v-2",
+			IntField: 2,
+			ID:       id2,
+		},
+	}
+
+	t.Run("list element", func(t *testing.T) {
+		gock.New(baseURL).
+			Get("").
+			Reply(200).
+			JSON(expectedElements)
+
+		resource, err := client.List(ctx, id, Options{})
+		require.NoError(t, err)
+		require.Equal(t, expectedElements, resource)
+	})
+
+	t.Run("list element with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+			Skip:       4,
+			Limit:      5,
+		}
+
+		gock.New(baseURL).
+			Get("").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			Reply(200).
+			JSON(expectedElements)
+
+		resources, err := client.List(ctx, id, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, expectedElements, resources)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		gock.New(baseURL).
+			Get("").
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "element not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		resource, err := client.List(ctx, id, Options{})
+		require.EqualError(t, err, "element not found")
+		require.Nil(t, resource)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		gock.New(baseURL).
+			Get("").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(expectedElements)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		resources, err := client.List(ctx, id, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedElements, resources)
 	})
 }
 

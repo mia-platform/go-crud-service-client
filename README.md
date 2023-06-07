@@ -15,6 +15,7 @@ The supported methods are:
 - GetById: `GET /:id`
 - PatchByID: `PATCH /:id`
 - Export: `GET /export`
+- List: `GET /`
 
 If you need some other method, please add it with a PR.
 
