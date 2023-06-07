@@ -552,7 +552,6 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-
 		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
 			BodyString(string(expectedBody)).
 			MatchHeaders(map[string]string{
