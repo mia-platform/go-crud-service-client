@@ -17,6 +17,7 @@ package crud
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -59,7 +60,7 @@ func TestNewClient(t *testing.T) {
 		require.NotNil(t, client)
 
 		gock.New(baseURL).
-			Get("export").
+			Get("export$").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -95,7 +96,7 @@ func TestExport(t *testing.T) {
 		`
 
 		gock.New(baseURL).
-			Get("export").
+			Get("export$").
 			Reply(200).
 			BodyString(responseBody)
 
@@ -137,7 +138,7 @@ func TestExport(t *testing.T) {
 		}
 
 		gock.New(baseURL).
-			Get("export").
+			Get("export$").
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			Reply(200).
 			BodyString(responseBody)
@@ -169,7 +170,7 @@ func TestExport(t *testing.T) {
 		}
 
 		gock.New(baseURL).
-			Get("export").
+			Get("export$").
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			Reply(200).
 			BodyString(responseBody)
@@ -190,7 +191,7 @@ func TestExport(t *testing.T) {
 
 	t.Run("throws with errors", func(t *testing.T) {
 		gock.New(baseURL).
-			Get("export").
+			Get("export$").
 			Reply(500).
 			AddHeader("Content-Type", "application/json").
 			BodyString(`{"message":"error message"}`)
@@ -208,7 +209,7 @@ func TestExport(t *testing.T) {
 		`
 
 		gock.New(baseURL).
-			Get("export").
+			Get("export$").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -257,7 +258,7 @@ func TestGetById(t *testing.T) {
 
 	t.Run("get element by id", func(t *testing.T) {
 		gock.New(baseURL).
-			Get(id).
+			Get(fmt.Sprintf("%s$", id)).
 			Reply(200).
 			JSON(expectedElement)
 
@@ -272,7 +273,7 @@ func TestGetById(t *testing.T) {
 		}
 
 		gock.New(baseURL).
-			Get(id).
+			Get(fmt.Sprintf("%s$", id)).
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			Reply(200).
 			JSON(expectedElement)
@@ -284,7 +285,7 @@ func TestGetById(t *testing.T) {
 
 	t.Run("throws - not found", func(t *testing.T) {
 		gock.New(baseURL).
-			Get(id).
+			Get(fmt.Sprintf("%s$", id)).
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "element not found",
@@ -299,7 +300,7 @@ func TestGetById(t *testing.T) {
 
 	t.Run("proxy headers in request", func(t *testing.T) {
 		gock.New(baseURL).
-			Get(id).
+			Get(fmt.Sprintf("%s$", id)).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -342,7 +343,7 @@ func TestPatch(t *testing.T) {
 
 	t.Run("patch element", func(t *testing.T) {
 		gock.New(baseURL).
-			Patch(id).
+			Patch(fmt.Sprintf("%s$", id)).
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedElement)
@@ -354,7 +355,7 @@ func TestPatch(t *testing.T) {
 
 	t.Run("patch element with addToSet", func(t *testing.T) {
 		gock.New(baseURL).
-			Patch(id).
+			Patch(fmt.Sprintf("%s$", id)).
 			BodyString(`{"$addToSet":{"something":{"$each":["a","b"]}}}`).
 			Reply(200).
 			JSON(expectedElement)
@@ -386,7 +387,7 @@ func TestPatch(t *testing.T) {
 		}
 
 		gock.New(baseURL).
-			Patch(id).
+			Patch(fmt.Sprintf("%s$", id)).
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			BodyString(expectedBody).
 			Reply(200).
@@ -399,7 +400,7 @@ func TestPatch(t *testing.T) {
 
 	t.Run("throws - not found", func(t *testing.T) {
 		gock.New(baseURL).
-			Patch(id).
+			Patch(fmt.Sprintf("%s$", id)).
 			BodyString(expectedBody).
 			Reply(404).
 			JSON(CrudErrorResponse{
@@ -415,7 +416,7 @@ func TestPatch(t *testing.T) {
 
 	t.Run("proxy headers in request", func(t *testing.T) {
 		gock.New(baseURL).
-			Patch(id).
+			Patch(fmt.Sprintf("%s$", id)).
 			BodyString(expectedBody).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
@@ -460,7 +461,7 @@ func TestList(t *testing.T) {
 
 	t.Run("list element", func(t *testing.T) {
 		gock.New(baseURL).
-			Get("").
+			Get("$").
 			Reply(200).
 			JSON(expectedElements)
 
@@ -477,7 +478,7 @@ func TestList(t *testing.T) {
 		}
 
 		gock.New(baseURL).
-			Get("").
+			Get("$").
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			Reply(200).
 			JSON(expectedElements)
@@ -489,7 +490,7 @@ func TestList(t *testing.T) {
 
 	t.Run("throws - not found", func(t *testing.T) {
 		gock.New(baseURL).
-			Get("").
+			Get("$").
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "element not found",
@@ -504,7 +505,7 @@ func TestList(t *testing.T) {
 
 	t.Run("proxy headers in request", func(t *testing.T) {
 		gock.New(baseURL).
-			Get("").
+			Get("$").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
