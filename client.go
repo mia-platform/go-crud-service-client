@@ -158,6 +158,10 @@ func (c Client[Resource]) List(ctx context.Context, options Options) ([]Resource
 	return resources, nil
 }
 
+type CreatedResource struct {
+	ID string `json:"_id"`
+}
+
 // Create performs a POST request to create a new resource on the target crud. Returns the
 // identifier of the created resource and any error that occurred.
 func (c Client[Resource]) Create(ctx context.Context, resource Resource, options Options) (string, error) {
@@ -170,9 +174,9 @@ func (c Client[Resource]) Create(ctx context.Context, resource Resource, options
 		return "", err
 	}
 
-	createdResource := make(map[string]string)
+	var createdResource CreatedResource
 	if _, err := c.client.Do(req, &createdResource); err != nil {
 		return "", responseError(err)
 	}
-	return createdResource["_id"], nil
+	return createdResource.ID, nil
 }
