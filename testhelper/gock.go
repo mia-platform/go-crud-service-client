@@ -74,6 +74,8 @@ func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 }
 
 func NewGockScope(t *testing.T, baseURL, method, path string) *gock.Request {
+	t.Helper()
+
 	scope := gock.New(baseURL)
 	scope.Method = strings.ToUpper(method)
 	scope.Path(fmt.Sprintf("%s$", path))
