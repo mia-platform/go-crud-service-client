@@ -574,6 +574,52 @@ func TestCreate(t *testing.T) {
 	})
 }
 
+func TestDeleteById(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	id := "my-id-1"
+
+	t.Run("delete element", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodDelete, id).
+			Reply(204)
+
+		err := client.DeleteById(ctx, id, Options{})
+		require.NoError(t, err)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodDelete, id).
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		err := client.DeleteById(ctx, id, Options{})
+		require.EqualError(t, err, "not found")
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodDelete, id).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(204)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		err := client.DeleteById(ctx, id, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+	})
+}
+
 func getClient(t *testing.T) Client[TestResource] {
 	t.Helper()
 
