@@ -181,3 +181,20 @@ func (c Client[Resource]) Create(ctx context.Context, resource Resource, options
 	}
 	return createdResource.ID, nil
 }
+
+// DeleteById deletes an element using the resource _id.
+func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Options) error {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, id, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return err
+	}
+
+	if _, err := c.client.Do(req, nil); err != nil {
+		return responseError(err)
+	}
+	return nil
+}

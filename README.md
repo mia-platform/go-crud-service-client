@@ -13,9 +13,11 @@ At the moment, it is limited.
 The supported methods are:
 
 - GetById: `GET /:id`
-- PatchByID: `PATCH /:id`
+- PatchById: `PATCH /:id`
 - Export: `GET /export`
 - List: `GET /`
+- Create: `POST /`
+- DeleteById: `DELETE /:id`
 
 If you need some other method, please add it with a PR.
 
