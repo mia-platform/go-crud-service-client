@@ -193,8 +193,7 @@ func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Opt
 		return err
 	}
 
-	resource := new(Resource)
-	if _, err := c.client.Do(req, resource); err != nil {
+	if _, err := c.client.Do(req, nil); err != nil {
 		return responseError(err)
 	}
 	return nil
