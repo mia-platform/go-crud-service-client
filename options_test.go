@@ -64,6 +64,9 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 			filter: types.Filter{
 				Limit:      5,
 				Projection: []string{"a", "b"},
+				FiledsQuery: map[string]string{
+					"customId": "abcde",
+				},
 				MongoQuery: map[string]any{
 					"field": map[string]any{
 						"$in": []string{"v-1", "v-2"},
@@ -71,7 +74,17 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 				},
 				Skip: 2,
 			},
-			expectedUnencodedQuery: `_l=5&_p=a,b&_q={"field":{"$in":["v-1","v-2"]}}&_sk=2`,
+			expectedUnencodedQuery: `_l=5&_p=a,b&customId=abcde&_q={"field":{"$in":["v-1","v-2"]}}&_sk=2`,
+		},
+		{
+			name: "with only FiledsQuery",
+			filter: types.Filter{
+				FiledsQuery: map[string]string{
+					"customId": "abcde",
+					"name":     "Alice",
+				},
+			},
+			expectedUnencodedQuery: `customId=abcde&name=Alice`,
 		},
 		{
 			name: "with only MongoQuery",

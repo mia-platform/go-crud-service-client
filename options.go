@@ -44,6 +44,13 @@ func (o Options) setOptionsInRequest(req *http.Request) error {
 
 func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	query := url.Values{}
+
+	if filter.FiledsQuery != nil {
+		for field, value := range filter.FiledsQuery {
+			query.Set(field, value)
+		}
+	}
+
 	if filter.MongoQuery != nil {
 		queryBytes, err := json.Marshal(filter.MongoQuery)
 		if err != nil {
