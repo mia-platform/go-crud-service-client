@@ -45,8 +45,8 @@ func (o Options) setOptionsInRequest(req *http.Request) error {
 func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	query := url.Values{}
 
-	if filter.FieldsQuery != nil {
-		for field, value := range filter.FieldsQuery {
+	if filter.Fields != nil {
+		for field, value := range filter.Fields {
 			query.Set(field, value)
 		}
 	}

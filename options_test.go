@@ -64,7 +64,7 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 			filter: types.Filter{
 				Limit:      5,
 				Projection: []string{"a", "b"},
-				FieldsQuery: map[string]string{
+				Fields: map[string]string{
 					"customId": "abcde",
 				},
 				MongoQuery: map[string]any{
@@ -79,7 +79,7 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 		{
 			name: "with only FiledsQuery",
 			filter: types.Filter{
-				FieldsQuery: map[string]string{
+				Fields: map[string]string{
 					"customId": "abcde",
 					"name":     "Alice",
 				},
