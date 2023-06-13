@@ -77,7 +77,7 @@ func TestAddCrudQueryToRequest(t *testing.T) {
 			expectedUnencodedQuery: `_l=5&_p=a,b&customId=abcde&_q={"field":{"$in":["v-1","v-2"]}}&_sk=2`,
 		},
 		{
-			name: "with only Fileds",
+			name: "with only Fields",
 			filter: types.Filter{
 				Fields: map[string]string{
 					"customId": "abcde",
