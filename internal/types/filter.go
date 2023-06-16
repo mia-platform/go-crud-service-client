@@ -21,4 +21,5 @@ type Filter struct {
 	Limit      int
 	Projection []string
 	Skip       int
+	Sort       string
 }

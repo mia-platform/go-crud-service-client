@@ -35,6 +35,7 @@ func TestSetOptionsInRequest(t *testing.T) {
 		options := Options{
 			Filter: Filter{
 				Limit: 5,
+				Sort:  "field1",
 			},
 			Headers: h,
 		}
@@ -45,6 +46,7 @@ func TestSetOptionsInRequest(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, h, req.Header)
 		require.Equal(t, "5", req.URL.Query().Get("_l"))
+		require.Equal(t, "field1", req.URL.Query().Get("_s"))
 	})
 }
 
