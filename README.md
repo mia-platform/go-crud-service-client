@@ -17,10 +17,10 @@ The supported methods are:
 - Count: `GET /count`
 - Export: `GET /export`
 - PatchById: `PATCH /:id`
-- Patch: `PATCH /`
+- PatchMany: `PATCH /`
 - Create: `POST /`
 - DeleteById: `DELETE /:id`
-- Delete: `DELETE /`
+- DeleteMany: `DELETE /`
 
 If you need some other method, please add it with a PR.
 

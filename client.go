@@ -177,8 +177,8 @@ func (c Client[Resource]) PatchById(ctx context.Context, id string, body PatchBo
 	return resource, nil
 }
 
-// Patch updates resources in bulk using commands in PatchBody
-func (c Client[Resource]) Patch(ctx context.Context, body PatchBody, options Options) (*Resource, error) {
+// PatchMany updates resources using commands in PatchBody
+func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options Options) (*Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "", body)
 	if err != nil {
 		return nil, err
@@ -236,8 +236,8 @@ func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Opt
 	return nil
 }
 
-// Delete allow to remove multiple resources.
-func (c Client[Resource]) Delete(ctx context.Context, options Options) error {
+// DeleteMany allow to remove multiple resources.
+func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) error {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, "", nil)
 	if err != nil {
 		return err

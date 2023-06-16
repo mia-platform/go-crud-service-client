@@ -319,8 +319,7 @@ func TestExport(t *testing.T) {
 		{Field: "v-3", IntField: 3, ID: "my-id-3"},
 	}
 
-	responseBody, err := testhelper.ParseResponseToNdjson[TestResource](response)
-	require.NoError(t, err)
+	responseBody := testhelper.ParseResponseToNdjson[TestResource](t, response)
 
 	t.Run("export data", func(t *testing.T) {
 		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
@@ -334,9 +333,6 @@ func TestExport(t *testing.T) {
 	})
 
 	t.Run("export data with filter", func(t *testing.T) {
-		responseBody, err := testhelper.ParseResponseToNdjson[TestResource](response)
-		require.NoError(t, err)
-
 		filter := Filter{
 			Projection: []string{"field"},
 			MongoQuery: map[string]any{
@@ -547,7 +543,7 @@ func TestPatch(t *testing.T) {
 			Reply(200).
 			JSON(expectedElement)
 
-		resource, err := client.Patch(ctx, body, Options{})
+		resource, err := client.PatchMany(ctx, body, Options{})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resource)
 	})
@@ -574,7 +570,7 @@ func TestPatch(t *testing.T) {
 			},
 		}
 
-		resource, err := client.Patch(ctx, body, Options{})
+		resource, err := client.PatchMany(ctx, body, Options{})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resource)
 	})
@@ -590,7 +586,7 @@ func TestPatch(t *testing.T) {
 			Reply(200).
 			JSON(expectedElement)
 
-		resource, err := client.Patch(ctx, body, Options{Filter: filter})
+		resource, err := client.PatchMany(ctx, body, Options{Filter: filter})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resource)
 	})
@@ -605,7 +601,7 @@ func TestPatch(t *testing.T) {
 				Error:      "Not Found",
 			})
 
-		resource, err := client.Patch(ctx, body, Options{})
+		resource, err := client.PatchMany(ctx, body, Options{})
 		require.EqualError(t, err, "element not found")
 		require.Nil(t, resource)
 	})
@@ -624,7 +620,7 @@ func TestPatch(t *testing.T) {
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		resources, err := client.Patch(ctx, body, Options{
+		resources, err := client.PatchMany(ctx, body, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
@@ -755,7 +751,7 @@ func TestDelete(t *testing.T) {
 		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
 			Reply(204)
 
-		err := client.Delete(ctx, Options{})
+		err := client.DeleteMany(ctx, Options{})
 		require.NoError(t, err)
 	})
 
@@ -768,7 +764,7 @@ func TestDelete(t *testing.T) {
 				Error:      "Not Found",
 			})
 
-		err := client.Delete(ctx, Options{})
+		err := client.DeleteMany(ctx, Options{})
 		require.EqualError(t, err, "not found")
 	})
 
@@ -784,7 +780,7 @@ func TestDelete(t *testing.T) {
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		err := client.Delete(ctx, Options{
+		err := client.DeleteMany(ctx, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
