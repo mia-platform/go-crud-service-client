@@ -34,6 +34,15 @@ func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 
 		actualQuery := r1.URL.Query()
 
+		if expectedFilter.Fields != nil {
+			for fieldName, expectedFieldValue := range expectedFilter.Fields {
+				actualFieldValue := actualQuery.Get(fieldName)
+				if !assert.Equal(t, expectedFieldValue, actualFieldValue) {
+					return false, fmt.Errorf("field %s checks fails. Actual: %s, required: %s", fieldName, actualFieldValue, expectedFieldValue)
+				}
+			}
+		}
+
 		if expectedFilter.MongoQuery != nil {
 			actualMongoQuery := actualQuery.Get("_q")
 

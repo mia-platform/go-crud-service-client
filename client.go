@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/davidebianchi/go-jsonclient"
 )
@@ -42,6 +43,62 @@ func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	return Client[Resource]{
 		client: client,
 	}, err
+}
+
+// GetById get a resource by _id
+func (c Client[Resource]) GetByID(ctx context.Context, id string, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resource := new(Resource)
+	if _, err := c.client.Do(req, resource); err != nil {
+		return nil, responseError(err)
+	}
+	return resource, nil
+}
+
+// List get the resources of the collection with the specified filter. It is limited by default
+// and with a max page of 200 elements (by default).
+// If you want to take more elements, use pagination
+func (c Client[Resource]) List(ctx context.Context, options Options) ([]Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resources := []Resource{}
+	if _, err := c.client.Do(req, &resources); err != nil {
+		return nil, responseError(err)
+	}
+	return resources, nil
+}
+
+// Count resources
+func (c Client[Resource]) Count(ctx context.Context, options Options) (int, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "count", nil)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return 0, err
+	}
+
+	var responseBuffer = &bytes.Buffer{}
+	if _, err := c.client.Do(req, responseBuffer); err != nil {
+		return 0, responseError(err)
+	}
+	return strconv.Atoi(responseBuffer.String())
 }
 
 // Export calls /export endpoint of crud-service. It is possible to add filters.
@@ -77,24 +134,6 @@ func (c Client[Resource]) Export(ctx context.Context, options Options) ([]Resour
 	}
 
 	return resources, nil
-}
-
-// GetById get a resource by _id
-func (c Client[Resource]) GetByID(ctx context.Context, id string, options Options) (*Resource, error) {
-	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, id, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := options.setOptionsInRequest(req); err != nil {
-		return nil, err
-	}
-
-	resource := new(Resource)
-	if _, err := c.client.Do(req, resource); err != nil {
-		return nil, responseError(err)
-	}
-	return resource, nil
 }
 
 // Body to update a document in the collection
@@ -138,11 +177,9 @@ func (c Client[Resource]) PatchById(ctx context.Context, id string, body PatchBo
 	return resource, nil
 }
 
-// List get the resources of the collection with the specified filter. It is limited by default
-// and with a max page of 200 elements (by default).
-// If you want to take more elements, use pagination
-func (c Client[Resource]) List(ctx context.Context, options Options) ([]Resource, error) {
-	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "", nil)
+// Patch updates resources in bulk using commands in PatchBody
+func (c Client[Resource]) Patch(ctx context.Context, body PatchBody, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "", body)
 	if err != nil {
 		return nil, err
 	}
@@ -151,11 +188,11 @@ func (c Client[Resource]) List(ctx context.Context, options Options) ([]Resource
 		return nil, err
 	}
 
-	resources := []Resource{}
-	if _, err := c.client.Do(req, &resources); err != nil {
+	resource := new(Resource)
+	if _, err := c.client.Do(req, resource); err != nil {
 		return nil, responseError(err)
 	}
-	return resources, nil
+	return resource, nil
 }
 
 // The type that represents a newly created resource
@@ -185,6 +222,23 @@ func (c Client[Resource]) Create(ctx context.Context, resource Resource, options
 // DeleteById deletes an element using the resource _id.
 func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Options) error {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, id, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return err
+	}
+
+	if _, err := c.client.Do(req, nil); err != nil {
+		return responseError(err)
+	}
+	return nil
+}
+
+// Delete allow to remove multiple resources.
+func (c Client[Resource]) Delete(ctx context.Context, options Options) error {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, "", nil)
 	if err != nil {
 		return err
 	}
