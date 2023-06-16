@@ -74,7 +74,15 @@ func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 			actualSkip := actualQuery.Get("_sk")
 
 			if !assert.Equal(t, strconv.Itoa(expectedFilter.Skip), actualSkip) {
-				return false, fmt.Errorf("skip query check fails. Actual: %s, required: %d", actualSkip, expectedFilter.Limit)
+				return false, fmt.Errorf("skip query check fails. Actual: %s, required: %d", actualSkip, expectedFilter.Skip)
+			}
+		}
+
+		if expectedFilter.Sort != "" {
+			actualSort := actualQuery.Get("_s")
+
+			if !assert.Equal(t, expectedFilter.Sort, actualSort) {
+				return false, fmt.Errorf("sort query check fails. Actual: %s, required: %s", actualSort, expectedFilter.Sort)
 			}
 		}
 

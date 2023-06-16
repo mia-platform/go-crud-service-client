@@ -194,6 +194,7 @@ func TestList(t *testing.T) {
 			Projection: []string{"field"},
 			Skip:       4,
 			Limit:      5,
+			Sort:       "field",
 		}
 
 		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
