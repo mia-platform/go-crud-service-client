@@ -6,6 +6,7 @@ require (
 	github.com/davidebianchi/go-jsonclient v1.5.0
 	github.com/h2non/gock v1.2.0
 	github.com/stretchr/testify v1.8.4
+	gopkg.in/h2non/gock.v1 v1.1.2
 )
 
 require (

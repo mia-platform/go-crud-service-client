@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/davidebianchi/go-jsonclient"
 )
@@ -32,8 +34,10 @@ type Client[Resource any] struct {
 
 // NewClient create a new client to interact with crud-service
 func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
+	apiURLWithoutFinalSlash := strings.TrimSuffix(options.BaseURL, "/")
+
 	client, err := jsonclient.New(jsonclient.Options{
-		BaseURL: options.BaseURL,
+		BaseURL: apiURLWithoutFinalSlash,
 		Headers: options.convertHeaders(),
 	})
 	if err != nil {
@@ -42,6 +46,42 @@ func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
 	return Client[Resource]{
 		client: client,
 	}, err
+}
+
+// GetById get a resource by _id
+func (c Client[Resource]) GetByID(ctx context.Context, id string, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resource := new(Resource)
+	if _, err := c.client.Do(req, resource); err != nil {
+		return nil, responseError(err)
+	}
+	return resource, nil
+}
+
+// Count resources
+func (c Client[Resource]) Count(ctx context.Context, options Options) (int, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, "count", nil)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return 0, err
+	}
+
+	var responseBuffer = &bytes.Buffer{}
+	if _, err := c.client.Do(req, responseBuffer); err != nil {
+		return 0, responseError(err)
+	}
+	return strconv.Atoi(responseBuffer.String())
 }
 
 // Export calls /export endpoint of crud-service. It is possible to add filters.
@@ -79,24 +119,6 @@ func (c Client[Resource]) Export(ctx context.Context, options Options) ([]Resour
 	return resources, nil
 }
 
-// GetById get a resource by _id
-func (c Client[Resource]) GetByID(ctx context.Context, id string, options Options) (*Resource, error) {
-	req, err := c.client.NewRequestWithContext(ctx, http.MethodGet, id, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := options.setOptionsInRequest(req); err != nil {
-		return nil, err
-	}
-
-	resource := new(Resource)
-	if _, err := c.client.Do(req, resource); err != nil {
-		return nil, responseError(err)
-	}
-	return resource, nil
-}
-
 // Body to update a document in the collection
 type PatchBody struct {
 	// Set replaces the value of the field with specified value. It is possible also
@@ -123,6 +145,24 @@ type PatchBody struct {
 // PatchById update an element using commands in PatchBody
 func (c Client[Resource]) PatchById(ctx context.Context, id string, body PatchBody, options Options) (*Resource, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, id, body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resource := new(Resource)
+	if _, err := c.client.Do(req, resource); err != nil {
+		return nil, responseError(err)
+	}
+	return resource, nil
+}
+
+// Patch updates resources in bulk using commands in PatchBody
+func (c Client[Resource]) Patch(ctx context.Context, body PatchBody, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "", body)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +225,23 @@ func (c Client[Resource]) Create(ctx context.Context, resource Resource, options
 // DeleteById deletes an element using the resource _id.
 func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Options) error {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, id, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return err
+	}
+
+	if _, err := c.client.Do(req, nil); err != nil {
+		return responseError(err)
+	}
+	return nil
+}
+
+// Delete allow to remove multiple resources.
+func (c Client[Resource]) Delete(ctx context.Context, options Options) error {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, "", nil)
 	if err != nil {
 		return err
 	}
