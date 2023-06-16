@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/mia-platform/go-crud-service-client/testhelper"
@@ -82,162 +83,6 @@ type TestResource struct {
 	Nested   NestedResource `json:"nested"`
 }
 
-func TestExport(t *testing.T) {
-	ctx := context.Background()
-	client := getClient(t)
-
-	t.Run("export data", func(t *testing.T) {
-		responseBody := `
-		{"field": "v-1","intField":1,"_id":"my-id-1"}
-		{"field": "v-2","intField":2,"_id":"my-id-2"}
-		{"field": "v-3","intField":3,"_id":"my-id-3"}
-		`
-
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			Reply(200).
-			BodyString(responseBody)
-
-		resources, err := client.Export(ctx, Options{})
-		require.NoError(t, err)
-		require.Equal(t, []TestResource{
-			{
-				Field:    "v-1",
-				IntField: 1,
-				ID:       "my-id-1",
-			},
-			{
-				Field:    "v-2",
-				IntField: 2,
-				ID:       "my-id-2",
-			},
-			{
-				Field:    "v-3",
-				IntField: 3,
-				ID:       "my-id-3",
-			},
-		}, resources)
-	})
-
-	t.Run("export data with filter", func(t *testing.T) {
-		responseBody := `
-		{"field": "v-1","_id":"my-id-1"}
-		{"field": "v-2","_id":"my-id-2"}
-		`
-
-		filter := Filter{
-			Projection: []string{"field"},
-			MongoQuery: map[string]any{
-				"field": map[string]any{
-					"$in": []string{"v-1", "v-2"},
-				},
-			},
-			Limit: 5,
-		}
-
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
-			Reply(200).
-			BodyString(responseBody)
-
-		resources, err := client.Export(ctx, Options{Filter: filter})
-		require.NoError(t, err)
-		require.Equal(t, []TestResource{
-			{
-				Field: "v-1",
-				ID:    "my-id-1",
-			},
-			{
-				Field: "v-2",
-				ID:    "my-id-2",
-			},
-		}, resources)
-	})
-
-	t.Run("export data with only mongo query", func(t *testing.T) {
-		responseBody := `
-		{"field": "v-1","_id":"my-id-1"}
-		{"field": "v-2","_id":"my-id-2"}
-		`
-
-		filter := Filter{
-			MongoQuery: map[string]any{
-				"field": map[string]any{"$in": []string{"v-1", "v-2"}},
-			},
-		}
-
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
-			Reply(200).
-			BodyString(responseBody)
-
-		resources, err := client.Export(ctx, Options{Filter: filter})
-		require.NoError(t, err)
-		require.Equal(t, []TestResource{
-			{
-				Field: "v-1",
-				ID:    "my-id-1",
-			},
-			{
-				Field: "v-2",
-				ID:    "my-id-2",
-			},
-		}, resources)
-	})
-
-	t.Run("throws with errors", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			Reply(500).
-			AddHeader("Content-Type", "application/json").
-			BodyString(`{"message":"error message"}`)
-
-		resources, err := client.Export(ctx, Options{})
-		require.EqualError(t, err, "error message")
-		require.Nil(t, resources)
-	})
-
-	t.Run("export data and proxy headers in request", func(t *testing.T) {
-		responseBody := `
-		{"field": "v-1","intField":1,"_id":"my-id-1"}
-		{"field": "v-2","intField":2,"_id":"my-id-2"}
-		{"field": "v-3","intField":3,"_id":"my-id-3"}
-		`
-
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			MatchHeaders(map[string]string{
-				"foo": "bar",
-				"taz": "ok",
-			}).
-			Reply(200).
-			BodyString(responseBody)
-
-		h := http.Header{}
-		h.Set("foo", "bar")
-		h.Set("taz", "ok")
-
-		resources, err := client.Export(ctx, Options{
-			Headers: h,
-		})
-		require.NoError(t, err)
-		require.Equal(t, []TestResource{
-			{
-				Field:    "v-1",
-				IntField: 1,
-				ID:       "my-id-1",
-			},
-			{
-				Field:    "v-2",
-				IntField: 2,
-				ID:       "my-id-2",
-			},
-			{
-				Field:    "v-3",
-				IntField: 3,
-				ID:       "my-id-3",
-			},
-		}, resources)
-	})
-}
-
 func TestGetById(t *testing.T) {
 	ctx := context.Background()
 	client := getClient(t)
@@ -250,7 +95,7 @@ func TestGetById(t *testing.T) {
 	}
 
 	t.Run("get element by id", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, id).
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
 			Reply(200).
 			JSON(expectedElement)
 
@@ -261,6 +106,9 @@ func TestGetById(t *testing.T) {
 
 	t.Run("get element with filter", func(t *testing.T) {
 		filter := Filter{
+			Fields: map[string]string{
+				"mockField": "mockValue",
+			},
 			Projection: []string{"field"},
 		}
 
@@ -309,7 +157,255 @@ func TestGetById(t *testing.T) {
 	})
 }
 
-func TestPatch(t *testing.T) {
+func TestList(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	id := "my-id-1"
+	id2 := "my-id-2"
+	expectedElements := []TestResource{
+		{
+			Field:    "v-1",
+			IntField: 1,
+			ID:       id,
+			Nested: NestedResource{
+				Field: "something",
+			},
+		},
+		{
+			Field:    "v-2",
+			IntField: 2,
+			ID:       id2,
+		},
+	}
+
+	t.Run("list element", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+			Reply(200).
+			JSON(expectedElements)
+
+		resource, err := client.List(ctx, Options{})
+		require.NoError(t, err)
+		require.Equal(t, expectedElements, resource)
+	})
+
+	t.Run("list element with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+			Skip:       4,
+			Limit:      5,
+		}
+
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			Reply(200).
+			JSON(expectedElements)
+
+		resources, err := client.List(ctx, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, expectedElements, resources)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "element not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		resource, err := client.List(ctx, Options{})
+		require.EqualError(t, err, "element not found")
+		require.Nil(t, resource)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(expectedElements)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		resources, err := client.List(ctx, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedElements, resources)
+	})
+}
+
+func TestCount(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	expectedResult := 42
+
+	t.Run("count elements", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
+			Reply(200).
+			JSON(strconv.Itoa(expectedResult))
+
+		actualResult, err := client.Count(ctx, Options{})
+		require.NoError(t, err)
+		require.Equal(t, expectedResult, actualResult)
+	})
+
+	t.Run("count elements with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+			Skip:       4,
+			Limit:      5,
+		}
+
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			Reply(200).
+			JSON(strconv.Itoa(expectedResult))
+
+		actualResult, err := client.Count(ctx, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, expectedResult, actualResult)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "element not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		actualResult, err := client.Count(ctx, Options{})
+		require.EqualError(t, err, "element not found")
+		require.Equal(t, 0, actualResult)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(strconv.Itoa(expectedResult))
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		actualResult, err := client.Count(ctx, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedResult, actualResult)
+	})
+}
+
+func TestExport(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	response := []TestResource{
+		{Field: "v-1", IntField: 1, ID: "my-id-1"},
+		{Field: "v-2", IntField: 2, ID: "my-id-2"},
+		{Field: "v-3", IntField: 3, ID: "my-id-3"},
+	}
+
+	responseBody := testhelper.ParseResponseToNdjson[TestResource](t, response)
+
+	t.Run("export data", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+			Reply(200).
+			AddHeader("Content-Type", "application/x-ndjson").
+			BodyString(responseBody)
+
+		resources, err := client.Export(ctx, Options{})
+		require.NoError(t, err)
+		require.Equal(t, response, resources)
+	})
+
+	t.Run("export data with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+			MongoQuery: map[string]any{
+				"field": map[string]any{
+					"$in": []string{"v-1", "v-2"},
+				},
+			},
+			Limit: 5,
+		}
+
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			Reply(200).
+			AddHeader("Content-Type", "application/x-ndjson").
+			BodyString(responseBody)
+
+		resources, err := client.Export(ctx, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, response, resources)
+	})
+
+	t.Run("export data with only mongo query", func(t *testing.T) {
+		filter := Filter{
+			MongoQuery: map[string]any{
+				"field": map[string]any{"$in": []string{"v-1", "v-2"}},
+			},
+		}
+
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			Reply(200).
+			AddHeader("Content-Type", "application/x-ndjson").
+			BodyString(responseBody)
+
+		resources, err := client.Export(ctx, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, response, resources)
+	})
+
+	t.Run("throws with errors", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+			Reply(500).
+			AddHeader("Content-Type", "application/json").
+			BodyString(`{"message":"error message"}`)
+
+		resources, err := client.Export(ctx, Options{})
+		require.EqualError(t, err, "error message")
+		require.Nil(t, resources)
+	})
+
+	t.Run("export data and proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			AddHeader("Content-Type", "application/x-ndjson").
+			BodyString(responseBody)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		resources, err := client.Export(ctx, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, response, resources)
+	})
+}
+
+func TestPatchById(t *testing.T) {
 	ctx := context.Background()
 	client := getClient(t)
 
@@ -421,57 +517,83 @@ func TestPatch(t *testing.T) {
 	})
 }
 
-func TestList(t *testing.T) {
+func TestPatch(t *testing.T) {
 	ctx := context.Background()
 	client := getClient(t)
 
-	id := "my-id-1"
-	id2 := "my-id-2"
-	expectedElements := []TestResource{
-		{
-			Field:    "v-1",
-			IntField: 1,
-			ID:       id,
-			Nested: NestedResource{
-				Field: "something",
-			},
-		},
-		{
-			Field:    "v-2",
-			IntField: 2,
-			ID:       id2,
+	expectedElement := TestResource{
+		Field:    "v-1",
+		IntField: 1,
+		ID:       "id",
+		Nested: NestedResource{
+			Field: "something",
 		},
 	}
+	body := PatchBody{
+		Set: map[string]any{
+			"field":        "v-1",
+			"nested.field": "something",
+		},
+	}
+	expectedBody := `{"$set":{"field":"v-1","nested.field":"something"}}`
 
-	t.Run("list element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+	t.Run("patch element", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(expectedBody).
 			Reply(200).
-			JSON(expectedElements)
+			JSON(expectedElement)
 
-		resource, err := client.List(ctx, Options{})
+		resource, err := client.PatchMany(ctx, body, Options{})
 		require.NoError(t, err)
-		require.Equal(t, expectedElements, resource)
+		require.Equal(t, &expectedElement, resource)
 	})
 
-	t.Run("list element with filter", func(t *testing.T) {
-		filter := Filter{
-			Projection: []string{"field"},
-			Skip:       4,
-			Limit:      5,
+	t.Run("patch element with addToSet", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(`{"$addToSet":{"something":{"$each":["a","b"]}}}`).
+			Reply(200).
+			JSON(expectedElement)
+
+		type patchBodyAddSomething struct {
+			Something any `json:"something"`
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
-			Reply(200).
-			JSON(expectedElements)
+		type eachOperatorBody struct {
+			Each []string `json:"$each"`
+		}
 
-		resources, err := client.List(ctx, Options{Filter: filter})
+		body := PatchBody{
+			AddToSet: patchBodyAddSomething{
+				Something: eachOperatorBody{
+					Each: []string{"a", "b"},
+				},
+			},
+		}
+
+		resource, err := client.PatchMany(ctx, body, Options{})
 		require.NoError(t, err)
-		require.Equal(t, expectedElements, resources)
+		require.Equal(t, &expectedElement, resource)
+	})
+
+	t.Run("patch element with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+		}
+
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			BodyString(expectedBody).
+			Reply(200).
+			JSON(expectedElement)
+
+		resource, err := client.PatchMany(ctx, body, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, &expectedElement, resource)
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(expectedBody).
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "element not found",
@@ -479,29 +601,30 @@ func TestList(t *testing.T) {
 				Error:      "Not Found",
 			})
 
-		resource, err := client.List(ctx, Options{})
+		resource, err := client.PatchMany(ctx, body, Options{})
 		require.EqualError(t, err, "element not found")
 		require.Nil(t, resource)
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(expectedBody).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
 			}).
 			Reply(200).
-			JSON(expectedElements)
+			JSON(expectedElement)
 
 		h := http.Header{}
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		resources, err := client.List(ctx, Options{
+		resources, err := client.PatchMany(ctx, body, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
-		require.Equal(t, expectedElements, resources)
+		require.Equal(t, &expectedElement, resources)
 	})
 }
 
@@ -614,6 +737,50 @@ func TestDeleteById(t *testing.T) {
 		h.Set("taz", "ok")
 
 		err := client.DeleteById(ctx, id, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+	})
+}
+
+func TestDelete(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	t.Run("delete element", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
+			Reply(204)
+
+		err := client.DeleteMany(ctx, Options{})
+		require.NoError(t, err)
+	})
+
+	t.Run("throws - not found", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
+			Reply(404).
+			JSON(CrudErrorResponse{
+				Message:    "not found",
+				StatusCode: 404,
+				Error:      "Not Found",
+			})
+
+		err := client.DeleteMany(ctx, Options{})
+		require.EqualError(t, err, "not found")
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(204)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		err := client.DeleteMany(ctx, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)

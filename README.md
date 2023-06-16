@@ -12,12 +12,15 @@ and we want a way to interact to it with a standard client.
 At the moment, it is limited.
 The supported methods are:
 
-- GetById: `GET /:id`
-- PatchById: `PATCH /:id`
-- Export: `GET /export`
+- GetById: `GET`
 - List: `GET /`
+- Count: `GET /count`
+- Export: `GET /export`
+- PatchById: `PATCH /:id`
+- PatchMany: `PATCH /`
 - Create: `POST /`
 - DeleteById: `DELETE /:id`
+- DeleteMany: `DELETE /`
 
 If you need some other method, please add it with a PR.
 
