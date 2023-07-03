@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/davidebianchi/go-jsonclient"
-	"github.com/mia-platform/go-crud-service-client/internal/types"
 )
 
 type Client[Resource any] struct {
@@ -198,36 +197,13 @@ func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options
 }
 
 type PatchBulkItem struct {
-	Filter Filter
-	Update PatchBody
-}
-
-type patchBulkItem struct {
-	Filter FilterMap `json:"filter"`
+	Filter Filter    `json:"filter"`
 	Update PatchBody `json:"update"`
-}
-
-type FilterMap map[string]string
-
-func (f FilterMap) Set(k, v string) {
-	f[k] = v
 }
 
 // PatchBulk updates multiple resources, each one with its own modifications
 func (c Client[Resource]) PatchBulk(ctx context.Context, body []PatchBulkItem, options Options) (int, error) {
-	requestBody := []patchBulkItem{}
-	for _, item := range body {
-		filter := FilterMap{}
-		if err := convertFilter(filter, types.Filter(item.Filter)); err != nil {
-			return 0, err
-		}
-		requestBody = append(requestBody, patchBulkItem{
-			Update: item.Update,
-			Filter: filter,
-		})
-	}
-
-	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "bulk", requestBody)
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "bulk", body)
 	if err != nil {
 		return 0, err
 	}

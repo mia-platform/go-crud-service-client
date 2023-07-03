@@ -27,6 +27,21 @@ import (
 
 type Filter types.Filter
 
+type FilterMap map[string]string
+
+func (f FilterMap) Set(k, v string) {
+	f[k] = v
+}
+
+func (filter Filter) MarshalJSON() ([]byte, error) {
+	newFilter := FilterMap{}
+	if err := convertFilter(newFilter, types.Filter(filter)); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(newFilter)
+}
+
 type Options struct {
 	Filter  Filter
 	Headers http.Header
