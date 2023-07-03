@@ -237,18 +237,19 @@ func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Opt
 }
 
 // DeleteMany allow to remove multiple resources.
-func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) error {
+func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) (int, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, "", nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := options.setOptionsInRequest(req); err != nil {
-		return err
+		return 0, err
 	}
 
-	if _, err := c.client.Do(req, nil); err != nil {
-		return responseError(err)
+	var responseBuffer = &bytes.Buffer{}
+	if _, err := c.client.Do(req, responseBuffer); err != nil {
+		return 0, responseError(err)
 	}
-	return nil
+	return strconv.Atoi(responseBuffer.String())
 }

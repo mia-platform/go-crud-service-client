@@ -750,10 +750,11 @@ func TestDelete(t *testing.T) {
 
 	t.Run("delete element", func(t *testing.T) {
 		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
-			Reply(204)
+			Reply(200).BodyString("3")
 
-		err := client.DeleteMany(ctx, Options{})
+		n, err := client.DeleteMany(ctx, Options{})
 		require.NoError(t, err)
+		require.Equal(t, 3, n)
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
@@ -765,8 +766,9 @@ func TestDelete(t *testing.T) {
 				Error:      "Not Found",
 			})
 
-		err := client.DeleteMany(ctx, Options{})
+		n, err := client.DeleteMany(ctx, Options{})
 		require.EqualError(t, err, "not found")
+		require.Equal(t, 0, n)
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
@@ -775,16 +777,17 @@ func TestDelete(t *testing.T) {
 				"foo": "bar",
 				"taz": "ok",
 			}).
-			Reply(204)
+			Reply(200).BodyString("4")
 
 		h := http.Header{}
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		err := client.DeleteMany(ctx, Options{
+		n, err := client.DeleteMany(ctx, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
+		require.Equal(t, 4, n)
 	})
 }
 
