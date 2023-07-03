@@ -68,12 +68,6 @@ func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	return nil
 }
 
-func addHeaderToRequest(req *http.Request, headers http.Header) {
-	for name := range headers {
-		req.Header.Set(name, headers.Get(name))
-	}
-}
-
 type Setter interface {
 	Set(k, v string)
 }
@@ -110,4 +104,10 @@ func convertFilter(query Setter, filter types.Filter) error {
 	}
 
 	return nil
+}
+
+func addHeaderToRequest(req *http.Request, headers http.Header) {
+	for name := range headers {
+		req.Header.Set(name, headers.Get(name))
+	}
 }
