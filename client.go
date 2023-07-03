@@ -198,8 +198,8 @@ func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options
 }
 
 type PatchBulkItem struct {
-	Filter Filter    `json:"filter"`
-	Update PatchBody `json:"update"`
+	Filter Filter
+	Update PatchBody
 }
 
 type patchBulkItem struct {
@@ -218,8 +218,7 @@ func (c Client[Resource]) PatchBulk(ctx context.Context, body []PatchBulkItem, o
 	requestBody := []patchBulkItem{}
 	for _, item := range body {
 		filter := FilterMap{}
-		err := convertFilter(filter, types.Filter(item.Filter))
-		if err != nil {
+		if err := convertFilter(filter, types.Filter(item.Filter)); err != nil {
 			return 0, err
 		}
 		requestBody = append(requestBody, patchBulkItem{
