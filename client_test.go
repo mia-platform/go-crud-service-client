@@ -648,8 +648,21 @@ func TestPatchBulk(t *testing.T) {
 				},
 			},
 		},
+		{
+			Filter: Filter{
+				Fields: map[string]string{
+					"field": "v-2",
+				},
+			},
+			Update: PatchBody{
+				Set: map[string]any{
+					"field":        "v-2",
+					"nested.field": "another",
+				},
+			},
+		},
 	}
-	expectedBody := `[{"filter":{"field":"v-1"},"update":{"$set":{"field":"v-1","nested.field":"something"}}}]`
+	expectedBody := `[{"filter":{"field":"v-1"},"update":{"$set":{"field":"v-1","nested.field":"something"}}},{"filter":{"field":"v-2"},"update":{"$set":{"field":"v-2","nested.field":"another"}}}]`
 	expectedResponse := 3
 
 	t.Run("patch element", func(t *testing.T) {

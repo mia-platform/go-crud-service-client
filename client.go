@@ -218,7 +218,7 @@ func (c Client[Resource]) PatchBulk(ctx context.Context, body []PatchBulkItem, o
 	requestBody := []patchBulkItem{}
 	for _, item := range body {
 		filter := FilterMap{}
-		err := calculateFilter(filter, types.Filter(item.Filter))
+		err := convertFilter(filter, types.Filter(item.Filter))
 		if err != nil {
 			return 0, err
 		}
