@@ -44,7 +44,26 @@ func (o Options) setOptionsInRequest(req *http.Request) error {
 
 func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	query := url.Values{}
+	if err := calculateFilter(query, filter); err != nil {
+		return err
+	}
 
+	req.URL.RawQuery = query.Encode()
+
+	return nil
+}
+
+func addHeaderToRequest(req *http.Request, headers http.Header) {
+	for name := range headers {
+		req.Header.Set(name, headers.Get(name))
+	}
+}
+
+type Setter interface {
+	Set(k, v string)
+}
+
+func calculateFilter(query Setter, filter types.Filter) error {
 	if filter.Fields != nil {
 		for field, value := range filter.Fields {
 			query.Set(field, value)
@@ -75,13 +94,5 @@ func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 		query.Set("_s", filter.Sort)
 	}
 
-	req.URL.RawQuery = query.Encode()
-
 	return nil
-}
-
-func addHeaderToRequest(req *http.Request, headers http.Header) {
-	for name := range headers {
-		req.Header.Set(name, headers.Get(name))
-	}
 }

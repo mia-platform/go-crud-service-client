@@ -23,8 +23,10 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/davidebianchi/go-jsonclient"
+	"github.com/mia-platform/go-crud-service-client/internal/types"
 )
 
 type Client[Resource any] struct {
@@ -98,7 +100,7 @@ func (c Client[Resource]) Count(ctx context.Context, options Options) (int, erro
 	if _, err := c.client.Do(req, responseBuffer); err != nil {
 		return 0, responseError(err)
 	}
-	return strconv.Atoi(responseBuffer.String())
+	return strconv.Atoi(strings.TrimSpace(responseBuffer.String()))
 }
 
 // Export calls /export endpoint of crud-service. It is possible to add filters.
@@ -195,6 +197,53 @@ func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options
 	return resource, nil
 }
 
+type PatchBulkItem struct {
+	Filter Filter    `json:"filter"`
+	Update PatchBody `json:"update"`
+}
+
+type patchBulkItem struct {
+	Filter FilterMap `json:"filter"`
+	Update PatchBody `json:"update"`
+}
+
+type FilterMap map[string]string
+
+func (f FilterMap) Set(k, v string) {
+	f[k] = v
+}
+
+// PatchBulk updates multiple resources, each one with its own modifications
+func (c Client[Resource]) PatchBulk(ctx context.Context, body []PatchBulkItem, options Options) (int, error) {
+	requestBody := []patchBulkItem{}
+	for _, item := range body {
+		filter := FilterMap{}
+		err := calculateFilter(filter, types.Filter(item.Filter))
+		if err != nil {
+			return 0, err
+		}
+		requestBody = append(requestBody, patchBulkItem{
+			Update: item.Update,
+			Filter: filter,
+		})
+	}
+
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "bulk", requestBody)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return 0, err
+	}
+
+	var responseBuffer = &bytes.Buffer{}
+	if _, err := c.client.Do(req, responseBuffer); err != nil {
+		return 0, responseError(err)
+	}
+	return strconv.Atoi(strings.TrimSpace(responseBuffer.String()))
+}
+
 // The type that represents a newly created resource
 type CreatedResource struct {
 	ID string `json:"_id"`
@@ -251,5 +300,5 @@ func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) (int,
 	if _, err := c.client.Do(req, responseBuffer); err != nil {
 		return 0, responseError(err)
 	}
-	return strconv.Atoi(responseBuffer.String())
+	return strconv.Atoi(strings.TrimSpace(responseBuffer.String()))
 }
