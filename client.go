@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/davidebianchi/go-jsonclient"
 )
@@ -95,11 +93,11 @@ func (c Client[Resource]) Count(ctx context.Context, options Options) (int, erro
 		return 0, err
 	}
 
-	var responseBuffer = &bytes.Buffer{}
-	if _, err := c.client.Do(req, responseBuffer); err != nil {
+	var responseCount int
+	if _, err := c.client.Do(req, &responseCount); err != nil {
 		return 0, responseError(err)
 	}
-	return convertBufferToInt(responseBuffer)
+	return responseCount, nil
 }
 
 // Export calls /export endpoint of crud-service. It is possible to add filters.
@@ -213,11 +211,11 @@ func (c Client[Resource]) PatchBulk(ctx context.Context, body PatchBulkBody, opt
 		return 0, err
 	}
 
-	var responseBuffer = &bytes.Buffer{}
-	if _, err := c.client.Do(req, responseBuffer); err != nil {
+	var responseCount int
+	if _, err := c.client.Do(req, &responseCount); err != nil {
 		return 0, responseError(err)
 	}
-	return convertBufferToInt(responseBuffer)
+	return responseCount, nil
 }
 
 // The type that represents a newly created resource
@@ -272,17 +270,9 @@ func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) (int,
 		return 0, err
 	}
 
-	var responseBuffer = &bytes.Buffer{}
-	if _, err := c.client.Do(req, responseBuffer); err != nil {
+	var responseCount int
+	if _, err := c.client.Do(req, &responseCount); err != nil {
 		return 0, responseError(err)
 	}
-	return convertBufferToInt(responseBuffer)
-}
-
-func convertBufferToInt(response *bytes.Buffer) (int, error) {
-	n, err := strconv.Atoi(strings.TrimSpace(response.String()))
-	if err != nil {
-		return 0, fmt.Errorf("%w: %s", ErrResponse, err)
-	}
-	return n, nil
+	return responseCount, nil
 }
