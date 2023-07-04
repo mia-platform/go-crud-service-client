@@ -227,20 +227,21 @@ func (filter *PatchBulkFilter) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	rawMongoQuery, err := strconv.Unquote(string(raw["_q"]))
-	if err != nil {
-		return err
+	if rawq := string(raw["_q"]); rawq != "" {
+		rawMongoQuery, err := strconv.Unquote(rawq)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal([]byte(rawMongoQuery), &filter.MongoQuery); err != nil {
+			return err
+		}
 	}
-	if err := json.Unmarshal([]byte(rawMongoQuery), &filter.MongoQuery); err != nil {
-		return err
-	}
-
 	delete(raw, "_q")
 
-	if filter.Fields == nil {
-		filter.Fields = map[string]string{}
-	}
 	for k, v := range raw {
+		if filter.Fields == nil {
+			filter.Fields = map[string]string{}
+		}
 		s, err := strconv.Unquote(string(v))
 		if err != nil {
 			return err
