@@ -200,9 +200,10 @@ type PatchBulkItem struct {
 	Filter Filter    `json:"filter"`
 	Update PatchBody `json:"update"`
 }
+type PatchBulkBody []PatchBulkItem
 
 // PatchBulk updates multiple resources, each one with its own modifications
-func (c Client[Resource]) PatchBulk(ctx context.Context, body []PatchBulkItem, options Options) (int, error) {
+func (c Client[Resource]) PatchBulk(ctx context.Context, body PatchBulkBody, options Options) (int, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "bulk", body)
 	if err != nil {
 		return 0, err
