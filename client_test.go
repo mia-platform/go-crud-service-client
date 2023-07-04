@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/h2non/gock"
 	"github.com/mia-platform/go-crud-service-client/testhelper"
 
 	"github.com/stretchr/testify/require"
@@ -666,7 +665,6 @@ func TestPatchBulk(t *testing.T) {
 	expectedResponse := 3
 
 	t.Run("patch element", func(t *testing.T) {
-		gock.Observe(gock.DumpRequest)
 		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(expectedBody).
 			Reply(200).
