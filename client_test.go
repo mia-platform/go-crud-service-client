@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/h2non/gock"
 	"github.com/mia-platform/go-crud-service-client/testhelper"
 
 	"github.com/stretchr/testify/require"
@@ -518,7 +519,7 @@ func TestPatchById(t *testing.T) {
 	})
 }
 
-func TestPatch(t *testing.T) {
+func TestPatchMany(t *testing.T) {
 	ctx := context.Background()
 	client := getClient(t)
 
@@ -626,6 +627,134 @@ func TestPatch(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, &expectedElement, resources)
+	})
+}
+
+func TestPatchBulk(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	body := []PatchBulkItem{
+		{
+			Filter: Filter{
+				Fields: map[string]string{
+					"field": "v-1",
+				},
+			},
+			Update: PatchBody{
+				Set: map[string]any{
+					"field":        "v-1",
+					"nested.field": "something",
+				},
+			},
+		},
+		{
+			Filter: Filter{
+				Fields: map[string]string{
+					"field": "v-2",
+				},
+			},
+			Update: PatchBody{
+				Set: map[string]any{
+					"field":        "v-2",
+					"nested.field": "another",
+				},
+			},
+		},
+	}
+	expectedBody := `[{"filter":{"field":"v-1"},"update":{"$set":{"field":"v-1","nested.field":"something"}}},{"filter":{"field":"v-2"},"update":{"$set":{"field":"v-2","nested.field":"another"}}}]`
+	expectedResponse := 3
+
+	t.Run("patch element", func(t *testing.T) {
+		gock.Observe(gock.DumpRequest)
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
+			BodyString(expectedBody).
+			Reply(200).
+			JSON(expectedResponse)
+
+		n, err := client.PatchBulk(ctx, body, Options{})
+		require.NoError(t, err)
+		require.Equal(t, expectedResponse, n)
+	})
+
+	t.Run("patch element with addToSet", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(`[{"filter":{"_q":"{\"foo\":\"bar\"}"},"update":{"$addToSet":{"something":{"$each":["a","b"]}}}}]`).
+			Reply(200).
+			JSON(3)
+
+		type patchBodyAddSomething struct {
+			Something any `json:"something"`
+		}
+
+		type eachOperatorBody struct {
+			Each []string `json:"$each"`
+		}
+
+		body := []PatchBulkItem{
+			{
+				Filter: Filter{MongoQuery: map[string]any{"foo": "bar"}},
+				Update: PatchBody{
+					AddToSet: patchBodyAddSomething{
+						Something: eachOperatorBody{
+							Each: []string{"a", "b"},
+						},
+					},
+				},
+			},
+		}
+
+		n, err := client.PatchBulk(ctx, body, Options{})
+		require.NoError(t, err)
+		require.Equal(t, expectedResponse, n)
+	})
+
+	t.Run("patch element with filter", func(t *testing.T) {
+		filter := Filter{
+			Projection: []string{"field"},
+		}
+
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			BodyString(expectedBody).
+			Reply(200).
+			JSON(expectedResponse)
+
+		resource, err := client.PatchBulk(ctx, body, Options{Filter: filter})
+		require.NoError(t, err)
+		require.Equal(t, expectedResponse, resource)
+	})
+
+	t.Run("returns 0 if not found element", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(expectedBody).
+			Reply(200).
+			JSON(0)
+
+		n, err := client.PatchBulk(ctx, body, Options{})
+		require.NoError(t, err)
+		require.Equal(t, 0, n)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+			BodyString(expectedBody).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(expectedResponse)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		n, err := client.PatchBulk(ctx, body, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedResponse, n)
 	})
 }
 

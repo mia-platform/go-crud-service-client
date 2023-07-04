@@ -27,6 +27,21 @@ import (
 
 type Filter types.Filter
 
+type FilterMap map[string]string
+
+func (f FilterMap) Set(k, v string) {
+	f[k] = v
+}
+
+func (filter Filter) MarshalJSON() ([]byte, error) {
+	newFilter := FilterMap{}
+	if err := convertFilter(newFilter, types.Filter(filter)); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(newFilter)
+}
+
 type Options struct {
 	Filter  Filter
 	Headers http.Header
@@ -44,7 +59,20 @@ func (o Options) setOptionsInRequest(req *http.Request) error {
 
 func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	query := url.Values{}
+	if err := convertFilter(query, filter); err != nil {
+		return err
+	}
 
+	req.URL.RawQuery = query.Encode()
+
+	return nil
+}
+
+type Setter interface {
+	Set(k, v string)
+}
+
+func convertFilter(query Setter, filter types.Filter) error {
 	if filter.Fields != nil {
 		for field, value := range filter.Fields {
 			query.Set(field, value)
@@ -74,8 +102,6 @@ func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	if filter.Sort != "" {
 		query.Set("_s", filter.Sort)
 	}
-
-	req.URL.RawQuery = query.Encode()
 
 	return nil
 }

@@ -18,6 +18,7 @@ The supported methods are:
 - Export: `GET /export`
 - PatchById: `PATCH /:id`
 - PatchMany: `PATCH /`
+- PatchBulk: `PATCH /bulk`
 - Create: `POST /`
 - DeleteById: `DELETE /:id`
 - DeleteMany: `DELETE /`

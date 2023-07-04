@@ -16,10 +16,10 @@
 package types
 
 type Filter struct {
-	Fields     map[string]string
-	MongoQuery map[string]any
-	Limit      int
-	Projection []string
-	Skip       int
-	Sort       string
+	Fields     map[string]string `json:"-"`
+	MongoQuery map[string]any    `json:"_q,omitempty"`
+	Limit      int               `json:"_l,omitempty"`
+	Projection []string          `json:"_p,omitempty"`
+	Skip       int               `json:"_sk,omitempty"`
+	Sort       string            `json:"_s,omitempty"`
 }
