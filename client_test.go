@@ -16,6 +16,7 @@
 package crud
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -929,4 +930,32 @@ func getClient(t *testing.T) Client[TestResource] {
 	require.NoError(t, err)
 
 	return client
+}
+
+func TestConvertStringToInt(t *testing.T) {
+	t.Run("empty response", func(t *testing.T) {
+		body := bytes.NewBufferString("")
+		_, err := convertBufferToInt(body)
+		require.ErrorContains(t, err, ErrResponse.Error())
+	})
+
+	t.Run("correct response", func(t *testing.T) {
+		body := bytes.NewBufferString("5")
+		i, err := convertBufferToInt(body)
+		require.NoError(t, err)
+		require.Equal(t, 5, i)
+	})
+
+	t.Run("not number", func(t *testing.T) {
+		body := bytes.NewBufferString("something")
+		_, err := convertBufferToInt(body)
+		require.ErrorContains(t, err, ErrResponse.Error())
+	})
+
+	t.Run("response with trailing space", func(t *testing.T) {
+		body := bytes.NewBufferString("3\n")
+		i, err := convertBufferToInt(body)
+		require.NoError(t, err)
+		require.Equal(t, 3, i)
+	})
 }

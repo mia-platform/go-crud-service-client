@@ -99,7 +99,7 @@ func (c Client[Resource]) Count(ctx context.Context, options Options) (int, erro
 	if _, err := c.client.Do(req, responseBuffer); err != nil {
 		return 0, responseError(err)
 	}
-	return strconv.Atoi(strings.TrimSpace(responseBuffer.String()))
+	return convertBufferToInt(responseBuffer)
 }
 
 // Export calls /export endpoint of crud-service. It is possible to add filters.
@@ -217,7 +217,7 @@ func (c Client[Resource]) PatchBulk(ctx context.Context, body PatchBulkBody, opt
 	if _, err := c.client.Do(req, responseBuffer); err != nil {
 		return 0, responseError(err)
 	}
-	return strconv.Atoi(strings.TrimSpace(responseBuffer.String()))
+	return convertBufferToInt(responseBuffer)
 }
 
 // The type that represents a newly created resource
@@ -276,5 +276,13 @@ func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) (int,
 	if _, err := c.client.Do(req, responseBuffer); err != nil {
 		return 0, responseError(err)
 	}
-	return strconv.Atoi(strings.TrimSpace(responseBuffer.String()))
+	return convertBufferToInt(responseBuffer)
+}
+
+func convertBufferToInt(response *bytes.Buffer) (int, error) {
+	n, err := strconv.Atoi(strings.TrimSpace(response.String()))
+	if err != nil {
+		return 0, fmt.Errorf("%w: %s", ErrResponse, err)
+	}
+	return n, nil
 }
