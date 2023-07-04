@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/davidebianchi/go-jsonclient"
 )
@@ -194,9 +195,65 @@ func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options
 	return resource, nil
 }
 
+type PatchBulkFilter struct {
+	MongoQuery map[string]any    `json:"_q,omitempty"`
+	Fields     map[string]string `json:"-"`
+}
+
+type FilterMap map[string]string
+
+func (f FilterMap) Set(k, v string) {
+	f[k] = v
+}
+
+func (filter PatchBulkFilter) MarshalJSON() ([]byte, error) {
+	newFilter := FilterMap{}
+	if err := convertMongoQuery(newFilter, filter.MongoQuery); err != nil {
+		return nil, err
+	}
+
+	if filter.Fields != nil {
+		for field, value := range filter.Fields {
+			newFilter.Set(field, value)
+		}
+	}
+
+	return json.Marshal(newFilter)
+}
+
+func (filter *PatchBulkFilter) UnmarshalJSON(data []byte) error {
+	raw := map[string]json.RawMessage{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	rawMongoQuery, err := strconv.Unquote(string(raw["_q"]))
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal([]byte(rawMongoQuery), &filter.MongoQuery); err != nil {
+		return err
+	}
+
+	delete(raw, "_q")
+
+	if filter.Fields == nil {
+		filter.Fields = map[string]string{}
+	}
+	for k, v := range raw {
+		s, err := strconv.Unquote(string(v))
+		if err != nil {
+			return err
+		}
+		filter.Fields[k] = s
+	}
+
+	return nil
+}
+
 type PatchBulkItem struct {
-	Filter Filter    `json:"filter"`
-	Update PatchBody `json:"update"`
+	Filter PatchBulkFilter `json:"filter"`
+	Update PatchBody       `json:"update"`
 }
 type PatchBulkBody []PatchBulkItem
 
