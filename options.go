@@ -27,19 +27,8 @@ import (
 
 type Filter types.Filter
 
-type FilterMap map[string]string
-
-func (f FilterMap) Set(k, v string) {
-	f[k] = v
-}
-
-func (filter Filter) MarshalJSON() ([]byte, error) {
-	newFilter := FilterMap{}
-	if err := convertFilter(newFilter, types.Filter(filter)); err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(newFilter)
+type Setter interface {
+	Set(k, v string)
 }
 
 type Options struct {
@@ -68,23 +57,15 @@ func addCrudQueryToRequest(req *http.Request, filter types.Filter) error {
 	return nil
 }
 
-type Setter interface {
-	Set(k, v string)
-}
-
-func convertFilter(query Setter, filter types.Filter) error {
+func convertFilter(query url.Values, filter types.Filter) error {
 	if filter.Fields != nil {
 		for field, value := range filter.Fields {
 			query.Set(field, value)
 		}
 	}
 
-	if filter.MongoQuery != nil {
-		queryBytes, err := json.Marshal(filter.MongoQuery)
-		if err != nil {
-			return err
-		}
-		query.Set("_q", string(queryBytes))
+	if err := convertMongoQuery(query, filter.MongoQuery); err != nil {
+		return err
 	}
 
 	if filter.Limit != 0 {
@@ -103,6 +84,17 @@ func convertFilter(query Setter, filter types.Filter) error {
 		query.Set("_s", filter.Sort)
 	}
 
+	return nil
+}
+
+func convertMongoQuery(query Setter, mongoQuery map[string]any) error {
+	if mongoQuery != nil {
+		queryBytes, err := json.Marshal(mongoQuery)
+		if err != nil {
+			return err
+		}
+		query.Set("_q", string(queryBytes))
+	}
 	return nil
 }
 

@@ -635,7 +635,7 @@ func TestPatchBulk(t *testing.T) {
 
 	body := []PatchBulkItem{
 		{
-			Filter: Filter{
+			Filter: PatchBulkFilter{
 				Fields: map[string]string{
 					"field": "v-1",
 				},
@@ -648,7 +648,7 @@ func TestPatchBulk(t *testing.T) {
 			},
 		},
 		{
-			Filter: Filter{
+			Filter: PatchBulkFilter{
 				Fields: map[string]string{
 					"field": "v-2",
 				},
@@ -691,7 +691,7 @@ func TestPatchBulk(t *testing.T) {
 
 		body := []PatchBulkItem{
 			{
-				Filter: Filter{MongoQuery: map[string]any{"foo": "bar"}},
+				Filter: PatchBulkFilter{MongoQuery: map[string]any{"foo": "bar"}},
 				Update: PatchBody{
 					AddToSet: patchBodyAddSomething{
 						Something: eachOperatorBody{
@@ -753,6 +753,81 @@ func TestPatchBulk(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, expectedResponse, n)
+	})
+}
+
+func TestPatchBulkFilter(t *testing.T) {
+	t.Run("marshal and unmarshal correctly", func(t *testing.T) {
+		filter := PatchBulkFilter{
+			Fields: map[string]string{
+				"f1": "v1",
+				"f2": "v2",
+			},
+			MongoQuery: map[string]any{
+				"field": map[string]any{
+					"$in": []any{"v-1", "v-2"},
+				},
+			},
+		}
+
+		f, err := json.Marshal(filter)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"f1":"v1","f2":"v2","_q":"{\"field\":{\"$in\":[\"v-1\",\"v-2\"]}}"}`, string(f))
+
+		actual := PatchBulkFilter{}
+		err = json.Unmarshal(f, &actual)
+		require.NoError(t, err)
+		require.Equal(t, actual, filter)
+	})
+
+	t.Run("without mongo query", func(t *testing.T) {
+		filter := PatchBulkFilter{
+			Fields: map[string]string{
+				"f1": "v1",
+				"f2": "v2",
+			},
+		}
+
+		f, err := json.Marshal(filter)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"f1":"v1","f2":"v2"}`, string(f))
+
+		actual := PatchBulkFilter{}
+		err = json.Unmarshal(f, &actual)
+		require.NoError(t, err)
+		require.Equal(t, actual, filter)
+	})
+
+	t.Run("without fields", func(t *testing.T) {
+		filter := PatchBulkFilter{
+			MongoQuery: map[string]any{
+				"field": map[string]any{
+					"$in": []any{"v-1", "v-2"},
+				},
+			},
+		}
+
+		f, err := json.Marshal(filter)
+		require.NoError(t, err)
+		require.JSONEq(t, `{"_q":"{\"field\":{\"$in\":[\"v-1\",\"v-2\"]}}"}`, string(f))
+
+		actual := PatchBulkFilter{}
+		err = json.Unmarshal(f, &actual)
+		require.NoError(t, err)
+		require.Equal(t, actual, filter)
+	})
+
+	t.Run("empty filter", func(t *testing.T) {
+		filter := PatchBulkFilter{}
+
+		f, err := json.Marshal(filter)
+		require.NoError(t, err)
+		require.JSONEq(t, `{}`, string(f))
+
+		actual := PatchBulkFilter{}
+		err = json.Unmarshal(f, &actual)
+		require.NoError(t, err)
+		require.Equal(t, actual, filter)
 	})
 }
 
