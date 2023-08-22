@@ -1,6 +1,6 @@
 [![Test and build](https://github.com/mia-platform/go-crud-service-client/actions/workflows/test-builds.yml/badge.svg)](https://github.com/mia-platform/go-crud-service-client/actions/workflows/test-builds.yml)
 [![Coverage Status](https://coveralls.io/repos/github/mia-platform/go-crud-service-client/badge.svg?branch=main)](https://coveralls.io/github/mia-platform/go-crud-service-client?branch=main)
-[![GoDoc](https://godoc.org/github.com/davidebianchi/gswagger?status.svg)](https://godoc.org/github.com/davidebianchi/gswagger)
+[![GoDoc](https://godoc.org/github.com/mia-platform/go-crud-service-client?status.svg)](https://pkg.go.dev/github.com/mia-platform/go-crud-service-client)
 
 # Golang CRUD service client
 
