@@ -993,6 +993,92 @@ func TestDelete(t *testing.T) {
 	})
 }
 
+func TestUpsertOne(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	expectedElement := &TestResource{
+		Field:    "v-1",
+		IntField: 1,
+		ID:       "my-id",
+		Nested: NestedResource{
+			Field: "something",
+		},
+	}
+	filter := Filter{
+		MongoQuery: map[string]any{
+			"field": "v-1",
+		},
+	}
+	requestBody := UpsertBody{
+		SetOnInsert: map[string]any{
+			"field": "v-1",
+			"id":    "my-id",
+		},
+		Set: map[string]any{
+			"intField": 1,
+			"nested": map[string]any{
+				"field": "something",
+			},
+		},
+	}
+
+	t.Run("upsert one element", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			JSON(requestBody).
+			Reply(200).
+			JSON(expectedElement)
+
+		response, err := client.UpsertOne(ctx, requestBody, Options{
+			Filter: filter,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedElement, response)
+	})
+
+	t.Run("throws if crud fails", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			JSON(requestBody).
+			Reply(500).
+			JSON(CrudErrorResponse{
+				Message:    "broken",
+				StatusCode: 500,
+				Error:      "Internal Server Error",
+			})
+
+		response, err := client.UpsertOne(ctx, requestBody, Options{
+			Filter: filter,
+		})
+		require.EqualError(t, err, "broken")
+		require.Nil(t, response)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
+			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			JSON(requestBody).
+			Reply(200).
+			JSON(expectedElement)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		response, err := client.UpsertOne(ctx, requestBody, Options{
+			Filter:  filter,
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, expectedElement, response)
+	})
+}
+
 func getClient(t *testing.T) Client[TestResource] {
 	t.Helper()
 
