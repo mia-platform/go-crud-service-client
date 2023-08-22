@@ -357,7 +357,7 @@ type UpsertBody struct {
 	AddToSet any `json:"$addToSet,omitempty"`
 	// SetOnInsert insert the value only during the document creation. It is possible also
 	// to use with nested fields: e.g. `"a.b": "update"`
-	SetOnInsert any `json:"$setOnInsert"`
+	SetOnInsert any `json:"$setOnInsert,omitempty"`
 }
 
 // UpsertOne allow to remove multiple resources.
