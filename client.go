@@ -334,3 +334,46 @@ func (c Client[Resource]) DeleteMany(ctx context.Context, options Options) (int,
 	}
 	return responseCount, nil
 }
+
+type UpsertBody struct {
+	// Set replaces the value of the field with specified value. It is possible also
+	// to use with nested fields: e.g. `"a.b": "update"`
+	Set any `json:"$set,omitempty"`
+	// Unset a particular document value
+	Unset map[string]bool `json:"$unset,omitempty"`
+	// Inc increment a field by a specified value
+	Inc map[string]int `json:"$inc,omitempty"`
+	// Mul multiply the value of a field by a specified number
+	Mul map[string]int `json:"$mul,omitempty"`
+	// CurrentDate sets the value of a field to the current date. The field MUST
+	// be of type Date
+	CurrentDate any `json:"$currentDate,omitempty"`
+	// Push appends a value to an array field
+	Push any `json:"$push,omitempty"`
+	// Pull removes a specified value from an array field
+	Pull any `json:"$pull,omitempty"`
+	// AddToSet appends a specified value to an array field unless the value is
+	// already present
+	AddToSet any `json:"$addToSet,omitempty"`
+	// SetOnInsert insert the value only during the document creation. It is possible also
+	// to use with nested fields: e.g. `"a.b": "update"`
+	SetOnInsert any `json:"$setOnInsert"`
+}
+
+// UpsertOne allow to remove multiple resources.
+func (c Client[Resource]) UpsertOne(ctx context.Context, body UpsertBody, options Options) (*Resource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPost, "upsert-one", body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return nil, err
+	}
+
+	resource := new(Resource)
+	if _, err := c.client.Do(req, &resource); err != nil {
+		return nil, responseError(err)
+	}
+	return resource, nil
+}

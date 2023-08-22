@@ -22,6 +22,7 @@ The supported methods are:
 - Create: `POST /`
 - DeleteById: `DELETE /:id`
 - DeleteMany: `DELETE /`
+- UpsertOne: `POST /upsert-one`
 
 If you need some other method, please add it with a PR.
 
