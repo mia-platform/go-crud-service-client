@@ -900,6 +900,89 @@ func TestCreate(t *testing.T) {
 	})
 }
 
+func TestCreateMany(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t)
+
+	expectedIDs := []map[string]string{
+		{"_id": "1"},
+		{"_id": "2"},
+	}
+
+	resourcesToCreate := []TestResource{
+		{
+			Field:    "v-1",
+			IntField: 1,
+			Nested: NestedResource{
+				Field: "something",
+			},
+		},
+		{
+			Field:    "v-2",
+			IntField: 2,
+			Nested: NestedResource{
+				Field: "something2",
+			},
+		},
+	}
+
+	expectedBody, err := json.Marshal(resourcesToCreate)
+	require.NoError(t, err)
+
+	t.Run("creates resource", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
+			BodyString(string(expectedBody)).
+			Reply(200).
+			JSON(expectedIDs)
+
+		actualIDs, err := client.CreateMany(ctx, resourcesToCreate, Options{})
+		require.NoError(t, err)
+		require.Equal(t, []CreatedResource{
+			{ID: "1"},
+			{ID: "2"},
+		}, actualIDs)
+	})
+
+	t.Run("throws - bad request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
+			BodyString(string(expectedBody)).
+			Reply(400).
+			JSON(CrudErrorResponse{
+				Message:    "missing required field",
+				StatusCode: 400,
+				Error:      "Bad Request",
+			})
+
+		actualID, err := client.CreateMany(ctx, resourcesToCreate, Options{})
+		require.EqualError(t, err, "missing required field")
+		require.Empty(t, actualID)
+	})
+
+	t.Run("proxy headers in request", func(t *testing.T) {
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
+			BodyString(string(expectedBody)).
+			MatchHeaders(map[string]string{
+				"foo": "bar",
+				"taz": "ok",
+			}).
+			Reply(200).
+			JSON(expectedIDs)
+
+		h := http.Header{}
+		h.Set("foo", "bar")
+		h.Set("taz", "ok")
+
+		actualIDs, err := client.CreateMany(ctx, resourcesToCreate, Options{
+			Headers: h,
+		})
+		require.NoError(t, err)
+		require.Equal(t, []CreatedResource{
+			{ID: "1"},
+			{ID: "2"},
+		}, actualIDs)
+	})
+}
+
 func TestDeleteById(t *testing.T) {
 	ctx := context.Background()
 	client := getClient(t)
