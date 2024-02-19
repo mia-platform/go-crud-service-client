@@ -300,6 +300,25 @@ func (c Client[Resource]) Create(ctx context.Context, resource Resource, options
 	return createdResource.ID, nil
 }
 
+// Create performs a POST request to create new resources on the target crud. Returns the
+// identifier of the created resources and any error that occurred.
+func (c Client[Resource]) CreateMany(ctx context.Context, resources []Resource, options Options) ([]CreatedResource, error) {
+	req, err := c.client.NewRequestWithContext(ctx, http.MethodPost, "bulk", resources)
+	if err != nil {
+		return []CreatedResource{}, err
+	}
+
+	if err := options.setOptionsInRequest(req); err != nil {
+		return []CreatedResource{}, err
+	}
+
+	var createdResources []CreatedResource
+	if _, err := c.client.Do(req, &createdResources); err != nil {
+		return []CreatedResource{}, responseError(err)
+	}
+	return createdResources, nil
+}
+
 // DeleteById deletes an element using the resource _id.
 func (c Client[Resource]) DeleteById(ctx context.Context, id string, options Options) error {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodDelete, id, nil)
