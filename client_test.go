@@ -930,7 +930,7 @@ func TestCreateMany(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("creates resource", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
 			BodyString(string(expectedBody)).
 			Reply(200).
 			JSON(expectedIDs)
@@ -944,7 +944,7 @@ func TestCreateMany(t *testing.T) {
 	})
 
 	t.Run("throws - bad request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
 			BodyString(string(expectedBody)).
 			Reply(400).
 			JSON(CrudErrorResponse{
@@ -959,7 +959,7 @@ func TestCreateMany(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
 			BodyString(string(expectedBody)).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
