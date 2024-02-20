@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -90,12 +91,20 @@ func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 	}
 }
 
-func NewGockScope(t *testing.T, baseURL, method, path string) *gock.Request {
+func NewGockScope(t *testing.T, baseURL, method, finalPath string) *gock.Request {
 	t.Helper()
+
+	parsedURL, err := url.Parse(baseURL)
+	require.NoError(t, err)
+
+	expectedPath := parsedURL.Path + finalPath
+	if !strings.HasSuffix(parsedURL.Path, "/") {
+		expectedPath = parsedURL.Path + "/" + finalPath
+	}
 
 	scope := gock.New(baseURL)
 	scope.Method = strings.ToUpper(method)
-	scope.Path(fmt.Sprintf("%s$", path))
+	scope.Path(fmt.Sprintf("^%s$", expectedPath))
 
 	t.Cleanup(func() {
 		require.True(t, gock.IsDone())
