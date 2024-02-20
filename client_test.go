@@ -95,7 +95,7 @@ func TestGetById(t *testing.T) {
 	}
 
 	t.Run("get element by id", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, id).
 			Reply(200).
 			JSON(expectedElement)
 
@@ -290,7 +290,7 @@ func TestCount(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -676,7 +676,7 @@ func TestPatchBulk(t *testing.T) {
 	})
 
 	t.Run("patch element with addToSet", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(`[{"filter":{"_q":"{\"foo\":\"bar\"}"},"update":{"$addToSet":{"something":{"$each":["a","b"]}}}}]`).
 			Reply(200).
 			JSON(3)
@@ -712,7 +712,7 @@ func TestPatchBulk(t *testing.T) {
 			Projection: []string{"field"},
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
 			BodyString(expectedBody).
 			Reply(200).
@@ -724,7 +724,7 @@ func TestPatchBulk(t *testing.T) {
 	})
 
 	t.Run("returns 0 if not found element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(0)
@@ -735,7 +735,7 @@ func TestPatchBulk(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(expectedBody).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
