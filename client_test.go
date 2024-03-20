@@ -44,7 +44,7 @@ func TestNewClient(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, c)
-		require.Equal(t, baseURL, c.client.BaseURL.String())
+		require.Equal(t, baseURL, c.(Client[TestResource]).client.BaseURL.String())
 	})
 
 	t.Run("create new client with default headers to add in request", func(t *testing.T) {
@@ -1170,5 +1170,5 @@ func getClient(t *testing.T) Client[TestResource] {
 	})
 	require.NoError(t, err)
 
-	return client
+	return client.(Client[TestResource])
 }

@@ -32,7 +32,7 @@ type Client[Resource any] struct {
 }
 
 // NewClient create a new client to interact with crud-service
-func NewClient[Resource any](options ClientOptions) (Client[Resource], error) {
+func NewClient[Resource any](options ClientOptions) (CrudClient[Resource], error) {
 	client, err := jsonclient.New(jsonclient.Options{
 		BaseURL: options.BaseURL,
 		Headers: options.convertHeaders(),
