@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testhelper
+package gock_support
 
 import (
 	"encoding/json"
@@ -24,10 +24,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mia-platform/go-crud-service-client/internal/types"
+
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type Filter types.Filter
 
 func CrudQueryMatcher(t *testing.T, expectedFilter Filter) gock.MatchFunc {
 	return func(r1 *http.Request, r2 *gock.Request) (bool, error) {

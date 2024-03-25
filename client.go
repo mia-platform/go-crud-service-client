@@ -178,21 +178,21 @@ func (c Client[Resource]) PatchById(ctx context.Context, id string, body PatchBo
 }
 
 // PatchMany updates resources using commands in PatchBody
-func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options Options) (*Resource, error) {
+func (c Client[Resource]) PatchMany(ctx context.Context, body PatchBody, options Options) (int, error) {
 	req, err := c.client.NewRequestWithContext(ctx, http.MethodPatch, "", body)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	if err := options.setOptionsInRequest(req); err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	resource := new(Resource)
-	if _, err := c.client.Do(req, resource); err != nil {
-		return nil, responseError(err)
+	var responseCount int
+	if _, err := c.client.Do(req, &responseCount); err != nil {
+		return 0, responseError(err)
 	}
-	return resource, nil
+	return responseCount, nil
 }
 
 type PatchBulkFilter struct {

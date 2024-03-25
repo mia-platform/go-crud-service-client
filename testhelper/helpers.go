@@ -19,11 +19,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mia-platform/go-crud-service-client/internal/types"
 	"github.com/stretchr/testify/require"
 )
-
-type Filter types.Filter
 
 func ParseResponseToNdjson[TResource any](t *testing.T, response []TResource) string {
 	t.Helper()
