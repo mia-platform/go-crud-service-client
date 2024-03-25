@@ -8,7 +8,7 @@ type CrudClient[Resource any] interface {
 	Count(ctx context.Context, options Options) (int, error)
 	Export(ctx context.Context, options Options) ([]Resource, error)
 	PatchById(ctx context.Context, id string, body PatchBody, options Options) (*Resource, error)
-	PatchMany(ctx context.Context, body PatchBody, options Options) (*Resource, error)
+	PatchMany(ctx context.Context, body PatchBody, options Options) (int, error)
 	PatchBulk(ctx context.Context, body PatchBulkBody, options Options) (int, error)
 	Create(ctx context.Context, resource Resource, options Options) (string, error)
 	CreateMany(ctx context.Context, resources []Resource, options Options) ([]CreatedResource, error)

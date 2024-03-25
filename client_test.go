@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/go-crud-service-client/testhelper"
+	gock "github.com/mia-platform/go-crud-service-client/testhelper/gock"
 
 	"github.com/stretchr/testify/require"
 )
@@ -59,7 +60,7 @@ func TestNewClient(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "export").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -95,7 +96,7 @@ func TestGetById(t *testing.T) {
 	}
 
 	t.Run("get element by id", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, id).
+		gock.NewGockScope(t, baseURL, http.MethodGet, id).
 			Reply(200).
 			JSON(expectedElement)
 
@@ -112,8 +113,8 @@ func TestGetById(t *testing.T) {
 			Projection: []string{"field"},
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, id).
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodGet, id).
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			Reply(200).
 			JSON(expectedElement)
 
@@ -123,7 +124,7 @@ func TestGetById(t *testing.T) {
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, id).
+		gock.NewGockScope(t, baseURL, http.MethodGet, id).
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "element not found",
@@ -137,7 +138,7 @@ func TestGetById(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, id).
+		gock.NewGockScope(t, baseURL, http.MethodGet, id).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -180,7 +181,7 @@ func TestList(t *testing.T) {
 	}
 
 	t.Run("list element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "").
 			Reply(200).
 			JSON(expectedElements)
 
@@ -197,8 +198,8 @@ func TestList(t *testing.T) {
 			Sort:       "field",
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodGet, "").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			Reply(200).
 			JSON(expectedElements)
 
@@ -208,7 +209,7 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "").
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "element not found",
@@ -222,7 +223,7 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -249,7 +250,7 @@ func TestCount(t *testing.T) {
 	expectedResult := 42
 
 	t.Run("count elements", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "count").
 			Reply(200).
 			JSON(strconv.Itoa(expectedResult))
 
@@ -265,8 +266,8 @@ func TestCount(t *testing.T) {
 			Limit:      5,
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodGet, "count").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			Reply(200).
 			JSON(strconv.Itoa(expectedResult))
 
@@ -276,7 +277,7 @@ func TestCount(t *testing.T) {
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "count").
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "element not found",
@@ -290,7 +291,7 @@ func TestCount(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "count").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "count").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -323,7 +324,7 @@ func TestExport(t *testing.T) {
 	responseBody := testhelper.ParseResponseToNdjson[TestResource](t, response)
 
 	t.Run("export data", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "export").
 			Reply(200).
 			AddHeader("Content-Type", "application/x-ndjson").
 			BodyString(responseBody)
@@ -344,8 +345,8 @@ func TestExport(t *testing.T) {
 			Limit: 5,
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodGet, "export").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			Reply(200).
 			AddHeader("Content-Type", "application/x-ndjson").
 			BodyString(responseBody)
@@ -362,8 +363,8 @@ func TestExport(t *testing.T) {
 			},
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodGet, "export").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			Reply(200).
 			AddHeader("Content-Type", "application/x-ndjson").
 			BodyString(responseBody)
@@ -374,7 +375,7 @@ func TestExport(t *testing.T) {
 	})
 
 	t.Run("throws with errors", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "export").
 			Reply(500).
 			AddHeader("Content-Type", "application/json").
 			BodyString(`{"message":"error message"}`)
@@ -385,7 +386,7 @@ func TestExport(t *testing.T) {
 	})
 
 	t.Run("export data and proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodGet, "export").
+		gock.NewGockScope(t, baseURL, http.MethodGet, "export").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -428,7 +429,7 @@ func TestPatchById(t *testing.T) {
 	expectedBody := `{"$set":{"field":"v-1","nested.field":"something"}}`
 
 	t.Run("patch element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, id).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, id).
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedElement)
@@ -439,7 +440,7 @@ func TestPatchById(t *testing.T) {
 	})
 
 	t.Run("patch element with addToSet", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, id).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, id).
 			BodyString(`{"$addToSet":{"something":{"$each":["a","b"]}}}`).
 			Reply(200).
 			JSON(expectedElement)
@@ -470,8 +471,8 @@ func TestPatchById(t *testing.T) {
 			Projection: []string{"field"},
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, id).
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, id).
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedElement)
@@ -482,7 +483,7 @@ func TestPatchById(t *testing.T) {
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, id).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, id).
 			BodyString(expectedBody).
 			Reply(404).
 			JSON(CrudErrorResponse{
@@ -497,7 +498,7 @@ func TestPatchById(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, id).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, id).
 			BodyString(expectedBody).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
@@ -522,14 +523,7 @@ func TestPatchMany(t *testing.T) {
 	ctx := context.Background()
 	client := getClient(t)
 
-	expectedElement := TestResource{
-		Field:    "v-1",
-		IntField: 1,
-		ID:       "id",
-		Nested: NestedResource{
-			Field: "something",
-		},
-	}
+	expectedElement := 3
 	body := PatchBody{
 		Set: map[string]any{
 			"field":        "v-1",
@@ -539,18 +533,18 @@ func TestPatchMany(t *testing.T) {
 	expectedBody := `{"$set":{"field":"v-1","nested.field":"something"}}`
 
 	t.Run("patch element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "").
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedElement)
 
 		resource, err := client.PatchMany(ctx, body, Options{})
 		require.NoError(t, err)
-		require.Equal(t, &expectedElement, resource)
+		require.Equal(t, expectedElement, resource)
 	})
 
 	t.Run("patch element with addToSet", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "").
 			BodyString(`{"$addToSet":{"something":{"$each":["a","b"]}}}`).
 			Reply(200).
 			JSON(expectedElement)
@@ -573,7 +567,7 @@ func TestPatchMany(t *testing.T) {
 
 		resource, err := client.PatchMany(ctx, body, Options{})
 		require.NoError(t, err)
-		require.Equal(t, &expectedElement, resource)
+		require.Equal(t, expectedElement, resource)
 	})
 
 	t.Run("patch element with filter", func(t *testing.T) {
@@ -581,19 +575,19 @@ func TestPatchMany(t *testing.T) {
 			Projection: []string{"field"},
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedElement)
 
 		resource, err := client.PatchMany(ctx, body, Options{Filter: filter})
 		require.NoError(t, err)
-		require.Equal(t, &expectedElement, resource)
+		require.Equal(t, expectedElement, resource)
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "").
 			BodyString(expectedBody).
 			Reply(404).
 			JSON(CrudErrorResponse{
@@ -604,11 +598,11 @@ func TestPatchMany(t *testing.T) {
 
 		resource, err := client.PatchMany(ctx, body, Options{})
 		require.EqualError(t, err, "element not found")
-		require.Nil(t, resource)
+		require.Zero(t, resource)
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "").
 			BodyString(expectedBody).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
@@ -621,11 +615,11 @@ func TestPatchMany(t *testing.T) {
 		h.Set("foo", "bar")
 		h.Set("taz", "ok")
 
-		resources, err := client.PatchMany(ctx, body, Options{
+		response, err := client.PatchMany(ctx, body, Options{
 			Headers: h,
 		})
 		require.NoError(t, err)
-		require.Equal(t, &expectedElement, resources)
+		require.Equal(t, expectedElement, response)
 	})
 }
 
@@ -665,7 +659,7 @@ func TestPatchBulk(t *testing.T) {
 	expectedResponse := 3
 
 	t.Run("patch element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedResponse)
@@ -676,7 +670,7 @@ func TestPatchBulk(t *testing.T) {
 	})
 
 	t.Run("patch element with addToSet", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(`[{"filter":{"_q":"{\"foo\":\"bar\"}"},"update":{"$addToSet":{"something":{"$each":["a","b"]}}}}]`).
 			Reply(200).
 			JSON(3)
@@ -712,8 +706,8 @@ func TestPatchBulk(t *testing.T) {
 			Projection: []string{"field"},
 		}
 
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(expectedResponse)
@@ -724,7 +718,7 @@ func TestPatchBulk(t *testing.T) {
 	})
 
 	t.Run("returns 0 if not found element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(expectedBody).
 			Reply(200).
 			JSON(0)
@@ -735,7 +729,7 @@ func TestPatchBulk(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPatch, "bulk").
 			BodyString(expectedBody).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
@@ -849,7 +843,7 @@ func TestCreate(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("creates resource", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+		gock.NewGockScope(t, baseURL, http.MethodPost, "").
 			BodyString(string(expectedBody)).
 			Reply(200).
 			JSON(map[string]string{
@@ -862,7 +856,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("throws - bad request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+		gock.NewGockScope(t, baseURL, http.MethodPost, "").
 			BodyString(string(expectedBody)).
 			Reply(400).
 			JSON(CrudErrorResponse{
@@ -877,7 +871,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "").
+		gock.NewGockScope(t, baseURL, http.MethodPost, "").
 			BodyString(string(expectedBody)).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
@@ -930,7 +924,7 @@ func TestCreateMany(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("creates resource", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPost, "bulk").
 			BodyString(string(expectedBody)).
 			Reply(200).
 			JSON(expectedIDs)
@@ -944,7 +938,7 @@ func TestCreateMany(t *testing.T) {
 	})
 
 	t.Run("throws - bad request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPost, "bulk").
 			BodyString(string(expectedBody)).
 			Reply(400).
 			JSON(CrudErrorResponse{
@@ -959,7 +953,7 @@ func TestCreateMany(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "bulk").
+		gock.NewGockScope(t, baseURL, http.MethodPost, "bulk").
 			BodyString(string(expectedBody)).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
@@ -990,7 +984,7 @@ func TestDeleteById(t *testing.T) {
 	id := "my-id-1"
 
 	t.Run("delete element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodDelete, id).
+		gock.NewGockScope(t, baseURL, http.MethodDelete, id).
 			Reply(204)
 
 		err := client.DeleteById(ctx, id, Options{})
@@ -998,7 +992,7 @@ func TestDeleteById(t *testing.T) {
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodDelete, id).
+		gock.NewGockScope(t, baseURL, http.MethodDelete, id).
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "not found",
@@ -1011,7 +1005,7 @@ func TestDeleteById(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodDelete, id).
+		gock.NewGockScope(t, baseURL, http.MethodDelete, id).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -1034,7 +1028,7 @@ func TestDelete(t *testing.T) {
 	client := getClient(t)
 
 	t.Run("delete element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
+		gock.NewGockScope(t, baseURL, http.MethodDelete, "").
 			Reply(200).BodyString("3")
 
 		n, err := client.DeleteMany(ctx, Options{})
@@ -1043,7 +1037,7 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("throws - not found", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
+		gock.NewGockScope(t, baseURL, http.MethodDelete, "").
 			Reply(404).
 			JSON(CrudErrorResponse{
 				Message:    "not found",
@@ -1057,7 +1051,7 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodDelete, "").
+		gock.NewGockScope(t, baseURL, http.MethodDelete, "").
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
@@ -1107,8 +1101,8 @@ func TestUpsertOne(t *testing.T) {
 	}
 
 	t.Run("upsert one element", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			JSON(requestBody).
 			Reply(200).
 			JSON(expectedElement)
@@ -1121,8 +1115,8 @@ func TestUpsertOne(t *testing.T) {
 	})
 
 	t.Run("throws if crud fails", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			JSON(requestBody).
 			Reply(500).
 			JSON(CrudErrorResponse{
@@ -1139,8 +1133,8 @@ func TestUpsertOne(t *testing.T) {
 	})
 
 	t.Run("proxy headers in request", func(t *testing.T) {
-		testhelper.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
-			AddMatcher(testhelper.CrudQueryMatcher(t, testhelper.Filter(filter))).
+		gock.NewGockScope(t, baseURL, http.MethodPost, "upsert-one").
+			AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 			MatchHeaders(map[string]string{
 				"foo": "bar",
 				"taz": "ok",
